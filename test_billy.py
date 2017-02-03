@@ -5,5 +5,5 @@ import billy
 class TestSunlightAPI(unittest.TestCase):
 
     def test_can_get_resp_200(self):
-        resp = billy.getresponse()
-        self.assertEqual(resp.status, 200)    
+        resp = billy.get_response()
+        self.assertEqual(resp.status_code, 200)    
