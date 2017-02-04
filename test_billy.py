@@ -45,21 +45,35 @@ class TestLegislatorParser(unittest.TestCase):
 class TestBillParser(unittest.TestCase):
 
     def setUp(self):
-        self.api = BillParser('S.Con.Res.3')
+        self.bill = BillParser('S.Con.Res.3')
 
     def test_sanitize_bill_id_if_congress_left_out(self):
-        self.assertEqual(self.api.bill_id, 'sconres3-115')
+        self.assertEqual(self.bill.bill_id, 'sconres3-115')
 
     def test_sanitize_bill_id_if_congress_included(self):
-        self.api.bill_id = 'S.Con.Res.3-115'
-        self.api.sanitize_bill_id()
-        self.assertEqual(self.api.bill_id, 'sconres3-115')
+        self.bill.bill_id = 'S.Con.Res.3-115'
+        self.bill.sanitize_bill_id()
+        self.assertEqual(self.bill.bill_id, 'sconres3-115')
 
     def test_get_roll_call_votes_for_bill(self):
-        votes = self.api.parse_bill_votes()
-        self.assertEqual(len(votes), 28)
+        self.assertEqual(len(self.bill.votes), 28)
 
     def test_get_official_title(self):
         expected_title = "A concurrent resolution setting forth the congressional budget for the United States Government for fiscal year 2017 and setting forth the appropriate budgetary levels for fiscal years 2018 through 2026."
-        self.assertEqual(self.api.official_title, expected_title)
+        self.assertEqual(self.bill.official_title, expected_title)
+
+    def test_official_title(self):
+        self.bill = BillParser('H.R.72')
+        self.assertFalse(self.bill._official_title)
+        self.assertEqual(self.bill.official_title, 'To ensure the Government Accountability Office has adequate access to information.')
+        self.assertTrue(self.bill._official_title)
+
+    def test_short_title(self):
+        self.bill = BillParser('H.R.72')
+        self.assertFalse(self.bill._short_title)
+        self.assertEqual(self.bill.short_title, 'GAO Access and Oversight Act of 2017')
+        self.assertTrue(self.bill._short_title)
+
+
+
 
