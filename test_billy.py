@@ -7,6 +7,9 @@ class TestLegislatorAPI(unittest.TestCase):
     def setUp(self):
         self.api = LegislatorAPI()
 
+    def test_can_get_most_recent_congress(self):
+        self.assertEqual(self.api.congress, 115)           
+
     def test_able_to_query_legislators_by_name(self):
         resp = self.api.get_legislators('Warren')
         self.assertIn('Warren', resp.text)
@@ -21,9 +24,7 @@ class TestLegislatorAPI(unittest.TestCase):
         self.api.get_legislators(last_name='Warren')
         self.assertIn('W000817', self.api.get_bio_ids())
 
-    def test_can_get_most_recent_congress(self):
-        self.api.get_legislators(last_name='Warren')
-        self.assertEqual(self.api.congress, 115)        
+     
 
 #class TestBillParser(BaseTestCase):
 
