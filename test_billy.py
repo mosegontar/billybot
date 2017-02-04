@@ -19,19 +19,18 @@ class TestSunlightAPI(BaseTestCase):
         resp = self.api.get_legislators(last_name='Smith', party='D')
         self.assertNotIn('Jason', resp.text)
 
-    def test_can_get_most_recent_congress(self):
-        resp = self.api.get_most_recent_congress()
-        parser = SunlightParser(resp.text)
-        congress = parser.get_most_recent_congress()
-        self.assertEqual(congress, 115)
 
-
-class TestLegislatorParser(BaseTestCase):
+class TestSunlightParser(BaseTestCase):
 
     def test_can_get_legislator_bio_id(self):
         resp = self.api.get_legislators(last_name='Warren')
         parser = LegislatorParser(resp.text)
         self.assertIn('W000817', parser.get_bio_ids())
+
+    def test_can_get_most_recent_congress(self):
+        resp = self.api.get_legislators(last_name='Warren')
+        parser = LegislatorParser(resp.text)
+        self.assertEqual(parser.congress, 115)        
 
 #class TestBillParser(BaseTestCase):
 
