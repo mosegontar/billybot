@@ -17,9 +17,12 @@ class SunlightAPI(object):
         return resp.text
 
     def search_legislators(self, last_name, first_name='', party='', chamber=''):
-        url = self.domain + 'legislators?query={}&party={}&chamber={}'.format(last_name, 
-                                                                              party, 
-                                                                              chamber)
+        query = 'legislators?'\
+                'last_name={}&first_name={}&party={}&chamber={}'.format(last_name,
+                                                                        first_name, 
+                                                                        party, 
+                                                                        chamber)
+        url = self.domain + query
         resp = requests.get(url)
         return self.get_results(resp.text)
 
@@ -27,6 +30,11 @@ class SunlightAPI(object):
         url = self.domain + 'votes?roll_id={}&fields=voters.{}.vote'.format(roll_id,
                                                                             bioguide_id)
         resp = requests.get(url)
+        return self.get_results(resp.text)
+
+    def get_legislator_recent_votes(self, bioguide_id):
+        url = self.domain + 'votes?voter_ids.{}__exists=true&per_page=50'.format(bioguide_id)
+        resp = requests.get(url)        
         return self.get_results(resp.text)
 
     def get_all_bill_votes(self, bill_id):
@@ -75,6 +83,9 @@ class LegislatorParser(SunlightAPI):
 
         return vote
 
+    def get_most_recent_votes(self):
+        pass
+
 class BillParser(SunlightAPI):
 
     def __init__(self, bill_id, congress=None):
@@ -83,22 +94,34 @@ class BillParser(SunlightAPI):
             self.congress = congress
         self.bill_id = bill_id
         self.sanitize_bill_id()
+        
+        self._votes = None
+        self._official_title = None
+        self._short_title = None
 
-        self.votes = self.parse_bill_votes()
-        self.official_title = self.parse_official_title()
-        self.short_title = self.parse_short_title()
+    @property
+    def votes(self):
+        if not self._votes:
+            self._votes = self.get_all_bill_votes(self.bill_id)
+        return self._votes
 
-    def parse_official_title(self):
-        data = self.get_official_bill_title(self.bill_id)
-        if not data:
-            return None
-        return data[0].get('official_title')
+    @property
+    def official_title(self):
+        if not self._official_title:
+            data = self.get_official_bill_title(self.bill_id)
+            if not data:
+                self._official_title = None
+            self._official_title = data[0].get('official_title')
+        return self._official_title
 
-    def parse_short_title(self):
-        data = self.get_short_bill_title(self.bill_id)
-        if not data:
-            return None
-        return data[0].get('short_title')
+    @property
+    def short_title(self):
+        if not self._short_title:
+            data = self.get_short_bill_title(self.bill_id)
+            if not data:
+                self._short_title = None
+            self._short_title = data[0].get('short_title')
+        return self._short_title
 
     def sanitize_bill_id(self):
 
@@ -106,10 +129,6 @@ class BillParser(SunlightAPI):
             self.bill_id += '-' + self.congress
 
         self.bill_id = self.bill_id.lower().replace('.', '')
-
-    def parse_bill_votes(self):
-        data = self.get_all_bill_votes(self.bill_id)
-        return data
 
 
 
