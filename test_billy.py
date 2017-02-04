@@ -55,3 +55,11 @@ class TestBillParser(unittest.TestCase):
         self.api.sanitize_bill_id()
         self.assertEqual(self.api.bill_id, 'sconres3-115')
 
+    def test_get_roll_call_votes_for_bill(self):
+        votes = self.api.parse_bill_votes()
+        self.assertEqual(len(votes), 28)
+
+    def test_get_official_title(self):
+        expected_title = "A concurrent resolution setting forth the congressional budget for the United States Government for fiscal year 2017 and setting forth the appropriate budgetary levels for fiscal years 2018 through 2026."
+        self.assertEqual(self.api.official_title, expected_title)
+
