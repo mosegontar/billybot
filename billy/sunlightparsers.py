@@ -1,5 +1,6 @@
 from billy.sunlightapi import SunlightAPI
 
+
 class BillParser(SunlightAPI):
 
     def __init__(self, bill_id, congress=None):
@@ -8,7 +9,7 @@ class BillParser(SunlightAPI):
             self.congress = congress
         self.bill_id = bill_id
         self.sanitize_bill_id()
-        
+
         # Get data on first request to avoid unnecessary API calls
         self._votes = None
         self._official_title = None
@@ -34,11 +35,11 @@ class BillParser(SunlightAPI):
 
     @property
     def official_title(self):
-        """Return bill's official title. If set to None, makes api call"""
+        """Return bill's official title. If set to None, makes api call."""
 
         if not self._official_title:
             data = self.get_official_bill_title(self.bill_id)
-            
+
             try:
                 self._official_title = data[0].get('official_title')
             except IndexError:
@@ -48,11 +49,11 @@ class BillParser(SunlightAPI):
 
     @property
     def short_title(self):
-        """Return bill's short title. If set to None, makes api call"""
+        """Return bill's short title. If set to None, makes api call."""
 
         if not self._short_title:
             data = self.get_short_bill_title(self.bill_id)
-            
+
             try:
                 self._short_title = data[0].get('short_title')
             except IndexError:
@@ -71,17 +72,17 @@ class LegislatorParser(SunlightAPI):
 
     @classmethod
     def summarize_bio(cls, bio):
-        """Receive full Legislator bio and return tuple summary"""
+        """Receive full Legislator bio and return tuple summary."""
 
         return (bio['first_name'], bio['last_name'], bio['bioguide_id'])
 
     @classmethod
     def get_bio_data(cls, data):
         """Return query_bio method and a summary of each legislator in data.
-        
+
         found_members contains summary info on each legislator in data.
-        User can get additional bio info for a paritcular member 
-        within found_member by calling the returned query_bio method with
+        User can get additional bio info for a paritcular member
+        in found_members by calling the returned query_bio method with
         the appropriate bioguide_id.
         """
         if not data:
@@ -89,8 +90,8 @@ class LegislatorParser(SunlightAPI):
 
         def query_bio(bio_id, requests):
             full_bio = next((bio for bio in data if bio.get('bioguide_id') == bio_id))
-            requested_data = [(req.title(), full_bio.get(req)) for req in requests]
-            return requested_data
+            req_data = [(req.title(), full_bio.get(req)) for req in requests]
+            return req_data
 
         found_members = [cls.summarize_bio(bio) for bio in data]
 
@@ -105,7 +106,7 @@ class LegislatorParser(SunlightAPI):
         return self._recent_votes
 
     def parse_roll_call_vote(self, roll_id):
-        """Return legislator's vote (Yea or Nay) for a particular roll call vote."""
+        """Return legislator's roll call vote (Yea or Nay)."""
         data = self.get_roll_call_vote(roll_id, self.bioguide_id)
 
         try:
