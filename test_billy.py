@@ -1,6 +1,7 @@
 import unittest
 
-from billy import SunlightAPI, LegislatorParser, BillParser
+from sunlightapi import SunlightAPI
+from sunlightparsers import LegislatorParser, BillParser
 
 
 class TestSunlightAPI(unittest.TestCase):
@@ -24,9 +25,11 @@ class TestSunlightAPI(unittest.TestCase):
         matches = [result['first_name'] == 'Jason' for result in data]
         self.assertFalse(any(matches))    
 
-    def test_can_get_legislator_bio_id(self):
+    def test_can_get_bio_data(self):
         data = self.api.search_legislators(last_name='Warren')
-        self.assertIn('W000817', LegislatorParser.get_bio_ids(data))
+        query_function, matches = LegislatorParser.get_bio_data(data)
+        self.assertTrue(any(['W000817' in item for item in matches]), 
+                        "'W000817' not in {}".format(matches))
 
 
 class TestLegislatorParser(unittest.TestCase):
