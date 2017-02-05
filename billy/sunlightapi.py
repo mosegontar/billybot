@@ -55,3 +55,4 @@ class SunlightAPI(object):
         url = self.domain + 'bills?bill_id={}&fields=short_title'.format(bill_id)
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
+        
