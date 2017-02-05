@@ -1,4 +1,4 @@
-from sunlightapi import SunlightAPI
+from billy.sunlightapi import SunlightAPI
 
 class BillParser(SunlightAPI):
 

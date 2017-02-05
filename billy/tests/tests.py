@@ -1,7 +1,7 @@
 import unittest
 
-from sunlightapi import SunlightAPI
-from sunlightparsers import LegislatorParser, BillParser
+from billy.sunlightapi import SunlightAPI
+from billy.sunlightparsers import LegislatorParser, BillParser
 
 
 class TestSunlightAPI(unittest.TestCase):
