@@ -9,19 +9,9 @@ class BillyBot(object):
         self.conversation = dict()
 
     def handle_command(self, user_id, username, command, channel):
-        if len(self.conversation.get(user_id)) > 1:
-            self.conversation.get(user_id).pop(0)
-        convo = self.conversation.get(user_id)[0]
+        convo = command
         message = username + ' nice to meet you, you said:\n {}'.format(convo) 
         SC.api_call("chat.postMessage", channel=channel, text=message, as_user=True)
-
-    def get_user_name(self, user_id):
-        if not user_id:
-            return
-
-        all_users = SC.api_call("users.list").get('members')
-        user = [u for u in all_users if u['id'] == user_id]
-        return user[0]['name']
 
     def parse_slack_output(self, stream_output):
         """
@@ -31,26 +21,28 @@ class BillyBot(object):
         """
 
         output_list = stream_output
-
         if output_list:
 
             for message in output_list:
+
                 channel = message.get('channel')
                 text = message.get('text')
                 user_id = message.get('user')
-                username = "<@{}>".format(self.get_user_name(user_id))
+
                 if (channel and text) and message['user'] != BOT_ID:
-                    self.conversation.setdefault(user_id, [])
-                    self.conversation[user_id].append(text)
-                    # Channels that start with D are direct messages
+                    
+                    username = "<@{}>".format(user_id) 
                     if channel.startswith('D'):
                         username = ''
-                        return user_id, username, text, channel
-                    elif AT_BOT in text:
+
+                    AT_BOT_REPLY = False
+                    if AT_BOT in text:
                         text = text.split(AT_BOT)[1].strip().lower()
+                        AT_BOT_REPLY = True
+
+                    # Channels that start with D are direct messages
+                    if channel.startswith('D') or AT_BOT_REPLY:
                         return user_id, username, text, channel
-                    else:
-                        pass
 
         return None, None, None, None
 
