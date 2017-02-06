@@ -16,13 +16,14 @@ class BillParser(SunlightAPI):
         self._short_title = None
 
     def sanitize_bill_id(self):
-        """Properly format bill_id. E.g.: "S. Con.Res.3." => 'sconres3-115'."""
+        """Format bill_id. 
+        
+        E.g.: "S. Con.Res.3." => 'sconres3-115'.
+        """
 
         if not self.bill_id.endswith('-'+self.congress):
             self.bill_id += '-' + self.congress
 
-        # Turn bill_id into proper format for Sunlight lookup:
-        # E.g.: "S. Con. Res. 3." => "sconres3-115"
         self.bill_id = self.bill_id.lower().replace(' ', '').replace('.', '')
 
     @property
