@@ -78,7 +78,7 @@ class LegislatorParser(SunlightAPI):
         return (bio['first_name'], bio['last_name'], bio['bioguide_id'])
 
     @classmethod
-    def get_bio_data(cls, data):
+    def get_bio_data(cls, query):
         """Return query_bio method and a summary of each legislator in data.
 
         found_members contains summary info on each legislator in data.
@@ -86,12 +86,20 @@ class LegislatorParser(SunlightAPI):
         in found_members by calling the returned query_bio method with
         the appropriate bioguide_id.
         """
+        
+        data = cls.search_legislators(query)
+
         if not data:
             return None
 
         def query_bio(bio_id, requests):
+
+            if len(requests) == 1 and requests[0] == 'bioguide_id':
+                return [('bioguide_id', bio_id)]
+
             full_bio = next((bio for bio in data if bio.get('bioguide_id') == bio_id))
             req_data = [(req.title(), full_bio.get(req)) for req in requests]
+            
             return req_data
 
         found_members = [cls.summarize_bio(bio) for bio in data]

@@ -1,6 +1,5 @@
 import os
 import time
-from collections import defaultdict
 from config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT as SC
 
 class BillyBot(object):
