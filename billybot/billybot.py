@@ -24,6 +24,9 @@ class BillyBot(object):
         if output_list:
 
             for message in output_list:
+                
+                AT_BOT_REPLY = False
+                DIRECT_MESSAGE = False
 
                 channel = message.get('channel')
                 text = message.get('text')
@@ -32,16 +35,17 @@ class BillyBot(object):
                 if (channel and text) and message['user'] != BOT_ID:
                     
                     username = "<@{}>".format(user_id) 
+                    
+                    # Channels that start with D are direct messages
                     if channel.startswith('D'):
+                        DIRECT_MESSAGE = True
                         username = ''
 
-                    AT_BOT_REPLY = False
                     if AT_BOT in text:
-                        text = text.split(AT_BOT)[1].strip().lower()
                         AT_BOT_REPLY = True
+                        text = text.split(AT_BOT)[1].strip().lower()
 
-                    # Channels that start with D are direct messages
-                    if channel.startswith('D') or AT_BOT_REPLY:
+                    if DIRECT_MESSAGE or AT_BOT_REPLY:
                         return user_id, username, text, channel
 
         return None, None, None, None
