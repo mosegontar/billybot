@@ -73,7 +73,7 @@ class VoteQuery(QueryHandler):
 
         self.set_vote_params()
 
-    def narrow_parameters(self):
+    def narrow_parameters(self, message):
         """Narrow down data based on words in message"""
 
         if vq.AWAITING_REPLY:
@@ -129,9 +129,8 @@ class VoteQuery(QueryHandler):
             vq.parse_query()
         else:
             vq = existing_query_object
-
-        vq.narrow_parameters()
-
+            vq.narrow_parameters(message)
+        
         VQ, reply = vq.get_reply()
 
         return VQ, reply
