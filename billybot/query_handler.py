@@ -1,10 +1,12 @@
-from billy.sunlightparsers import LegislatorParser as LP
+from collections import OrderedDict
+from billy.sunlightparsers import LegislatorParser as LP, BillParser as BP
 
 
 class QueryHandler(object):
 
     def __init__(self, command, query):
         self.query = query.split(command)[1].strip()
+        self.AWAITING_REPLY = False
 
     def select_one(self, keys, items):
         
@@ -27,7 +29,9 @@ class VoteQuery(QueryHandler):
         super().__init__('vote', query)
         self.member_query = None
         self.bill_query = None
-        self.vote_params = {'member': None, 'roll_id': None}
+        self.vote_params = OrderedDict()
+        self.vote_params['member'] = self.member_query
+        self.vote_params['roll_id'] = self.bill_query
 
         # for any paramater == None,
         #   api call
@@ -47,20 +51,14 @@ class VoteQuery(QueryHandler):
         #
         # get_the_vote(member, roll)
 
-    def validate_params(self):
-        invalid = []
-        for key, value in self.vote_params:
-            if type(value) != str:
-                invalid.append(key)
 
-        return invalid
 
-    def find_member(self):
-        data = self.vote_params.get('member')
-        if not data:
-            query_bio, data = LP.get_bio_data(self.member_query, 'bioguide_id')
-        self.vote_params['member'] = data
-
+    def set_vote_params(self):
+        if not self.vote_params.get('member'):
+            self.vote_params['member'] = LP.search_legislators(self.member_query)
+        if not self.vote_params.get('roll_id'):
+            self.vote_params['roll_id'] = BP.get_roll_votes(self.bill_query)
+        return
 
     def parse_query(self):
         _member, _bill = self.query.split('bill:')
@@ -70,29 +68,34 @@ class VoteQuery(QueryHandler):
     @staticmethod
     def run_query(message, existing_query_object=None):
 
-        if existing_query_object:
-            vp = existing_query_object
-            invalid_params = vp.validate_params()
-            if 'member' in invalid_params:
-                member_results = VoteQuery.select_one(message)
-                if len(member_results) == 1:
-                    vp.vote_params['member'] = member_results[0]
-                else:
-                    vp.vote_params 
-            elif 'bill' in invalid_params:
-                pass
-            else:
-                pass
+        if not existing_query_object:
+            if 'member:' not in message and 'bill:' not in message:
+                # query not properly formatted
+                return False
 
-        if 'member:' not in message and 'bill:' not in message:
-            # query not properly formatted
-            return False
+            vq = VoteQuery(message)
+            vq.parse_query()
+        else:
+            vq = existing_query_object
 
-        vq = VoteQuery(message)
-        vq.parse_query()
-        vp.find_member()
+        if vq.AWAITING_REPLY:
+            for key, val in vq.vote_params:
+                if type(val) == list:
+                    vq.vote_params[key] = vq.select_one(message, val)
+                    break
+        if len(vq.vote_params['member']) == 1:
+            vq.vote_params['member'] = # member's bioguide_id
+        else:
+            vq.AWAITING_REPLY = True
+            return vq, vq.vote_params['member'], 'Select a member'
 
-        return vq
+        if len(vq.vote_params['roll_id']) == 1:
+            vq.vote_params['roll_id'] = vq.vote_params['roll_id'][0]
+        else:
+            vq.AWAITING_REPLY = True
+            return vq, vq.vote_params['roll_id'], 'Select a roll_id'
+        
+
 
     def __repr__(self):
         return "VoteQuery({})".format(self.query)
