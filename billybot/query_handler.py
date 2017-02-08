@@ -29,9 +29,24 @@ class VoteQuery(QueryHandler):
         self.bill_query = None
         self.vote_params = {'member': None, 'roll_id': None}
 
-        # if params are none
-        # api call
-        # if params are m
+        # for any paramater == None,
+        #   api call
+        # IF AWAITING REPLY
+        #   for param in parms:
+        #       param = select_one(msg)
+        #
+        # ELSE
+        #   if len(member list) == 1
+        #       member list = the one member
+        #   else:
+        #       return member list and instructions
+        #   if len(roll votes) == 1:
+        #       roll_id = the roll vote
+        #   else:
+        #       return roll list and instructions
+        #
+        # get_the_vote(member, roll)
+
     def validate_params(self):
         invalid = []
         for key, value in self.vote_params:
