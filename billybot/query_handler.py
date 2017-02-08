@@ -1,96 +1,98 @@
-from billy.sunlightparsers import BillParser as BP, LegislatorParser as LP
+from billy.sunlightparsers import LegislatorParser as LP
+
 
 class QueryHandler(object):
 
-    def __init__(self, query):
-        self.query = query
-        self.query_function = None
-        self.data = None
-
-        self.reply = None
-        self.clarify = None
+    def __init__(self, command, query):
+        self.query = query.split(command)[1].strip()
 
     def select_one(self, keys, items):
         
         if type(keys) != list:
             keys = [keys]
-
-        complete = False
         
         if len(keys) == 1:
             try:
-                complete = True
-                return items[int(keys[0])-1], complete
+                return items[int(keys[0])-1]
             except:
                 pass
 
         results = [itm for itm in items if all([k in itm for k in keys])]
-
-        if len(results) == 1:
-            results = results[0]
-            complete = True
         
-        return results, complete
-
-    def parse_message(self, message):
-
-        if self.clarify:
-            print(self.query_function(message, 'bill'))
-
-        if message.startswith('vote'):
-            member, bill = [m.strip() for m in message.split('member:')[1].strip().split('bill:')]
-            self.query_function = self.get_vote
-            reply, clarify = self.get_vote(member, bill)
-            print(reply)
-            if clarify:
-                clarification = input('> ')
-                self.parse_message(clarification)
+        return results
 
 class VoteQuery(QueryHandler):
 
-    def __init__(self, member_query, bill_query):
+    def __init__(self, query):
+        super().__init__('vote', query)
+        self.member_query = None
+        self.bill_query = None
         self.vote_params = {'member': None, 'roll_id': None}
-        self.process_query(member_query, bill_query)
 
+        # if params are none
+        # api call
+        # if params are m
     def validate_params(self):
+        invalid = []
         for key, value in self.vote_params:
             if type(value) != str:
-                return False
-        return True
+                invalid.append(key)
 
-    def process_query(self, member, bill):
-        
+        return invalid
+
+    def find_member(self):
+        data = self.vote_params.get('member')
+        if not data:
+            query_bio, data = LP.get_bio_data(self.member_query, 'bioguide_id')
+        self.vote_params['member'] = data
 
 
-    def get_vote(self, member_query, bill_query):
+    def parse_query(self):
+        _member, _bill = self.query.split('bill:')
+        self.member_query = _member.strip('member:').strip()
+        self.bill_query = _bill.strip()
 
-        if not self.query_params:
-            self.query_params = {'member': None, 'bill': None}
-        
-            query_bio, member_data = LP.get_bio_data(member_query, 'bioguide_id')
+    @staticmethod
+    def run_query(message, existing_query_object=None):
 
-            if len(member_data) == 1:
-                bio_id = query_bio(member_data[0][2])
-                self.query_params['member'] = bio_id
+        if existing_query_object:
+            vp = existing_query_object
+            invalid_params = vp.validate_params()
+            if 'member' in invalid_params:
+                member_results = VoteQuery.select_one(message)
+                if len(member_results) == 1:
+                    vp.vote_params['member'] = member_results[0]
+                else:
+                    vp.vote_params 
+            elif 'bill' in invalid_params:
+                pass
             else:
-                self.query_params['member'] = member_data
-                self.reply = 'Need more info\n' + '; '.join([' '.join(list(l)) for l in self.query_params['member']])
-                self.clarify = 'member'
+                pass
 
-            if type(self.query_params['member']) == str:
-                self.reply = 'Got it!\n' + self.query_params['member']
+        if 'member:' not in message and 'bill:' not in message:
+            # query not properly formatted
+            return False
 
-            return self.reply, self.clarify
+        vq = VoteQuery(message)
+        vq.parse_query()
+        vp.find_member()
 
-        else:
-            return self.select_one([member_query], self.query_params[self.clarify])
+        return vq
+
+    def __repr__(self):
+        return "VoteQuery({})".format(self.query)
 
 
-    def get_vote_triage
+class MessageTriage(object):
 
+    def __init__(self, message):
+        self.message = message
 
+    def identify_query(self):
 
-message = "vote member: Bishop bill: S. Con. Res. 3"
-qh = QueryHandler(message)
+        if self.message.startswith('vote'):
+            return VoteQuery.run_query(self.message)
 
-qh.parse_message(qh.query)
+if __name__ == '__main__':
+    message = "vote member: Bishop bill: S. Con. Res. 3"
+    triage = MessageTriage(message)

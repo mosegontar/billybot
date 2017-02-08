@@ -74,37 +74,20 @@ class LegislatorParser(SunlightAPI):
     @classmethod
     def summarize_bio(cls, bio):
         """Receive full Legislator bio and return tuple summary."""
-
-        return (bio['first_name'], bio['last_name'], bio['bioguide_id'])
+        name = ' '.join([bio['first_name'], bio['last_name']])
+        person = '{} ({})'.format(name, bio['state'])
+        return (person, bio['bioguide_id'])
 
     @classmethod
-    def get_bio_data(cls, member, requests):
-        """Return query_bio method and a summary of each legislator in data.
-
-        found_members contains summary info on each legislator in data.
-        User can get additional bio info for a paritcular member
-        in found_members by calling the returned query_bio method with
-        the appropriate bioguide_id.
-        """
-        
-        data = cls.search_legislators(member)
+    def get_bio_data(cls, data):
+        """Return dictionary dict of legislator matches"""
 
         if not data:
-            return None, None
+            return None
 
-        def query_bio(bio_id):
+        found_members = dict((cls.summarize_bio(bio), bio) for bio in data)
 
-            if len(requests) == 1 and requests[0] == 'bioguide_id':
-                return [('bioguide_id', bio_id)]
-
-            full_bio = next((bio for bio in data if bio.get('bioguide_id') == bio_id))
-            req_data = [(req.title(), full_bio.get(req)) for req in requests]
-            
-            return req_data
-
-        found_members = [cls.summarize_bio(bio) for bio in data]
-
-        return query_bio, found_members
+        return found_members
 
     @property
     def recent_votes(self):

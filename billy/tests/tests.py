@@ -27,7 +27,7 @@ class TestSunlightAPI(unittest.TestCase):
 
     def test_can_get_bio_data(self):
         data = self.api.search_legislators(last_name='Warren')
-        query_function, matches = LegislatorParser.get_bio_data(data)
+        matches = LegislatorParser.get_bio_data(data)
         self.assertTrue(any(['W000817' in item for item in matches]), 
                         "'W000817' not in {}".format(matches))
 
