@@ -1,16 +1,26 @@
 import os
 import time
-from config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT as SC
+
+from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
+from .query_handler import MessageTriage
 
 class BillyBot(object):
 
     def __init__(self):
-        self.conversation = dict()
+        self.active_queries = dict()
+
+    def send_message(self, username, message, channel):
+        SLACK_CLIENT.api_call("chat.postMessage", channel=channel, text=message, as_user=True, unfurl_media=False)
 
     def handle_command(self, user_id, username, command, channel):
-        convo = command
-        message = username + ' nice to meet you, you said:\n {}'.format(convo) 
-        SC.api_call("chat.postMessage", channel=channel, text=message, as_user=True)
+        
+        active_query = self.active_queries.get(user_id)
+        triage = MessageTriage(command, active_query)
+        query, reply = triage.identify_query()
+
+        self.active_queries[user_id] = query
+        
+        self.send_message(username, reply, channel)
 
     def parse_slack_output(self, stream_output):
         """
@@ -51,10 +61,10 @@ class BillyBot(object):
 
     def run(self):
 
-        if SC.rtm_connect():
+        if SLACK_CLIENT.rtm_connect():
             print('BillyBot is running!')
             while True:
-                user_id, username, command, channel = self.parse_slack_output(SC.rtm_read())
+                user_id, username, command, channel = self.parse_slack_output(SLACK_CLIENT.rtm_read())
                 if command and channel:
                     self.handle_command(user_id, username, command, channel)
                 time.sleep(READ_WEBSOCKET_DELAY)

@@ -3,16 +3,18 @@ class MessageHandler(object):
 
     def __init__(self, query, results):
 
-        self.results = results[0]
+        self.results = results
         self.query = query
 
     def get_results_as_str(self):
-        """Return string of results"""
+        """Return string of results."""
 
         numbered = ['[{}] {}'.format(i+1, res) for i, res in enumerate(self.results)]
         return "\n".join(numbered)
 
     def make_reply(self):
+        """Return full reply to user query."""
+
         reply = self.message + '\n' + self.get_results_as_str()
         return reply   
 
@@ -24,6 +26,8 @@ class VoteQueryMessageHandler(MessageHandler):
         self.message = self.get_message(msg_num)
 
     def get_message(self, msg_num):
+        """Return a specific message."""
+
         MESSAGES = dict()
         
         MESSAGES[0] = "Here are your results: "
@@ -37,10 +41,5 @@ class VoteQueryMessageHandler(MessageHandler):
         return MESSAGES.get(msg_num, "Something went wrong")
 
 
-
-
-results = ['Elizabeth Warren (MA)', 'Pat Warren (MA)']
-msg_handler = VoteQueryMessageHandler('Warren', results, 1)
-print(msg_handler.make_reply())
 
 
