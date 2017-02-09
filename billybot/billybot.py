@@ -2,7 +2,29 @@ import os
 import time
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
-from .query_handler import MessageTriage
+from .query_handler import VoteQuery
+
+
+class MessageTriage(object):
+
+    def __init__(self, message, query_object=None):
+
+        self.message = message
+        self.query_object = query_object
+
+    def identify_query(self):
+        """Send message to proper QueryHandler object.
+        
+        Return QueryHandler object and reply for user.
+        """
+        if self.query_object and self.query_object.AWAITING_REPLY:
+            query, reply = self.query_object.run_query(self.message, self.query_object)
+            return query, reply
+
+        if self.message.startswith('vote'):
+            query, reply = VoteQuery.run_query(self.message)
+            return query, reply
+
 
 class BillyBot(object):
 
@@ -10,11 +32,15 @@ class BillyBot(object):
         self.active_queries = dict()
 
     def send_message(self, username, message, channel):
+        """Send message back to user via slack api call."""
+
         SLACK_CLIENT.api_call("chat.postMessage", channel=channel, text=message, as_user=True, unfurl_media=False)
 
     def handle_command(self, user_id, username, command, channel):
-        
+        """Triage message and prepare reply to use."""
+
         active_query = self.active_queries.get(user_id)
+        
         triage = MessageTriage(command, active_query)
         query, reply = triage.identify_query()
 
@@ -41,6 +67,9 @@ class BillyBot(object):
                 text = message.get('text')
                 user_id = message.get('user')
 
+                if not user_id:
+                    break
+
                 if (channel and text) and message['user'] != BOT_ID:
                     
                     username = "<@{}>".format(user_id) 
@@ -60,6 +89,7 @@ class BillyBot(object):
         return None, None, None, None
 
     def run(self):
+        """Connect to Slack RTM and start accepting incoming messages."""
 
         if SLACK_CLIENT.rtm_connect():
             print('BillyBot is running!')
