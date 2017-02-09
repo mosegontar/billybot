@@ -29,7 +29,7 @@ class BillParser(SunlightAPI):
     def summarize_roll_votes(self, vote):
 
         date = vote['voted_at'].split('T')[0]
-        question = '{}: <{}|{}> (Voted on: {})'.format(vote['roll_id'],
+        question = '{}: <{}|{}> ({})'.format(vote['roll_id'],
                                                        vote['url'], 
                                                        vote['question'], 
                                                        date, 

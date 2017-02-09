@@ -8,7 +8,9 @@ class QueryHandler(object):
 
     def __init__(self, command, query):
 
-        self.query = query.split(command)[1].strip()
+        self.query = dict()
+        self.query['original_query'] = query.split(command)[1].strip()
+
         self.params = OrderedDict()
         self.AWAITING_REPLY = 0
 
@@ -36,78 +38,52 @@ class QueryHandler(object):
             for key, val in self.params.items():
                 if type(val) == list:
                     self.params[key] = self.select(message, val)
-                    break 
+                    break
+
+    def get_reply(self):
+
+        for key, value in self.params.items():
+            if type(value) == str:
+                pass
+            elif len(value) == 1:
+                self.AWAITING_REPLY = 0
+                self.finalize_params(key)
+            else:
+                self.AWAITING_REPLY += 1
+                msg_handler = self.prepare_message_handler(key=key)
+                reply = msg_handler.make_reply()
+                return reply
+
+        self.AWAITING_REPLY = 0
+        resolved_query = self.resolve_query()
+        
+        msg_handler = self.prepare_message_handler(results=resolved_query)
+        reply = msg_handler.make_reply()
+        return reply
+
+    def prepare_message_handler(self, results=None, key=None):
+
+        if not results:
+            results = [itm[0] for itm in self.params[key]]
+
+        message_data = {'msg_num': self.AWAITING_REPLY, 
+                        'results': results,
+                        'query': self.query.get(key)}
+
+        msg_handler = self.handler(**message_data)
+
+        return msg_handler
+
 
 class VoteQuery(QueryHandler):
 
     def __init__(self, query):
-        super().__init__('vote', query)
-        
-        self.member_query = None
-        self.bill_query = None
-
+        super().__init__('vote', query)       
+      
         self.params['member'] = None
-        self.params['roll_id'] = None
-
-    def set_params(self):
-        """Makes API call and sets params if not already set"""
-
-        if not self.params.get('member'):
-            members = list(LegislatorParser.get_bio_data(self.member_query.title()))
-            self.params['member'] = members
-
-        if not self.params.get('roll_id'):
-            bill = BillParser(self.bill_query)
-            roll_votes = bill.votes
-            self.params['roll_id'] = roll_votes
-
-    def parse_query(self):
-        """Break up query string and set instance variables"""
-
-        _member, _bill = self.query.split('bill:')
-        self.member_query = _member.strip('member:').strip()
-        self.bill_query = _bill.strip()
-
-        self.set_params()
-
-    def get_reply(self):
-
-        if len(self.params['member']) == 1:
-            self.params['member'] = self.params['member'][0][1]
-        elif type(self.params['member']) != str:
-            self.AWAITING_REPLY += 1
-            
-            # but what if it's a clarifying message?
-            msg_handler = VoteQueryMessageHandler(self.member_query, 
-                                                  map(lambda item: item[0], self.params['member']), 
-                                                  self.AWAITING_REPLY) 
-
-            reply = msg_handler.make_reply()
-            return reply
-        else:
-            pass
-
-        if len(self.params['roll_id']) == 1:
-            self.params['roll_id'] = self.params['roll_id'][0][1]
-
-        elif type(self.params['roll_id']) != str:
-            self.AWAITING_REPLY += 1
-            
-            msg_handler = VoteQueryMessageHandler(self.bill_query, 
-                                                  map(lambda item: item[0], self.params['roll_id']), 
-                                                  self.AWAITING_REPLY) 
-
-            reply = msg_handler.make_reply()
-            return reply
-        else:
-            pass
-
-        self.AWAITING_REPLY = 0
-        member = LegislatorParser(self.params['member'])
-        roll_vote = self.params['roll_id']
+        self.params['bill_votes'] = None
         
-        return member.parse_roll_call_vote(roll_vote)
-
+        self.handler = VoteQueryMessageHandler
 
     @staticmethod
     def run_query(message, existing_query_object=None):
@@ -117,6 +93,7 @@ class VoteQuery(QueryHandler):
             if 'member:' not in message and 'bill:' not in message:
                 # query not properly formatted
                 return False
+                
             vote_query = VoteQuery(message)
             vote_query.parse_query()
         else:
@@ -127,28 +104,50 @@ class VoteQuery(QueryHandler):
 
         return vote_query, reply
 
+    def parse_query(self):
+        """Break up query string and set instance variables"""
+
+        _member, _bill = self.query['original_query'].split('bill:')
+        self.query['member'] = _member.strip('member:').strip()
+        self.query['bill_votes'] = _bill.strip()
+
+        self.initialize_params()
+
+    def initialize_params(self):
+        """Makes API call and sets params if not already set"""
+
+        if not self.params.get('member'):
+            members = list(LegislatorParser.get_bio_data(self.query['member'].title()))
+            self.params['member'] = members
+
+        if not self.params.get('bill_votes'):
+            bill = BillParser(self.query['bill_votes'])
+            roll_votes = bill.votes
+            self.params['bill_votes'] = roll_votes
+
+    def finalize_params(self, key):
+
+        if key == 'member':
+            self.params['member'] = self.params['member'][0][1]
+
+        if key == 'bill_votes':
+            self.params['bill_votes'] = self.params['bill_votes'][0][1]
+
+    def resolve_query(self):
+
+        member = LegislatorParser(self.params['member'])
+        roll_vote = self.params['bill_votes']
+        print(self.params['bill_votes'])
+        vote = member.parse_roll_call_vote(roll_vote)
+
+        return '{} voted {} on {}.'.format(self.query['member'], 
+                                           vote, 
+                                           self.query['bill_votes'])
+
+
+
     def __repr__(self):
         return "VoteQuery({})".format(self.query)
 
 
-class MessageTriage(object):
-
-    def __init__(self, message, query_object=None):
-
-        self.message = message
-        self.query_object = query_object
-
-    def identify_query(self):
-        """Send message to proper QueryHandler object.
-        
-        Return QueryHandler object and reply for user.
-        """
-        if self.query_object:
-            query, reply = self.query_object.run_query(self.message, 
-                                                       self.query_object)
-
-        if self.message.startswith('vote'):
-            query, reply = VoteQuery.run_query(self.message)
-
-        return query, reply
 
