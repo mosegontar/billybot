@@ -26,12 +26,24 @@ class BillParser(SunlightAPI):
 
         self.bill_id = self.bill_id.lower().replace(' ', '').replace('.', '')
 
+    def summarize_roll_votes(self, vote):
+
+        date = vote['voted_at'].split('T')[0]
+        question = '{}: <{}|{}> (Voted on: {})'.format(vote['roll_id'],
+                                                       vote['url'], 
+                                                       vote['question'], 
+                                                       date, 
+                                                       vote['url'])
+        return (question, vote['roll_id'])
+      
+
     @property
     def votes(self):
         """Return bill's associated votes. If set to None, makes api call."""
 
         if not self._votes:
-            self._votes = self.get_all_bill_votes(self.bill_id)
+            votes = self.get_all_bill_votes(self.bill_id)
+            self._votes = [self.summarize_roll_votes(vote) for vote in votes]
         return self._votes
 
     @property
@@ -74,16 +86,16 @@ class LegislatorParser(SunlightAPI):
     @classmethod
     def summarize_bio(cls, bio):
         """Receive full Legislator bio and return tuple summary."""
+
         name = ' '.join([bio['first_name'], bio['last_name']])
         person = '{} ({})'.format(name, bio['state'])
         return (person, bio['bioguide_id'])
 
     @classmethod
-    def get_bio_data(cls, data):
+    def get_bio_data(cls, query):
         """Return dictionary dict of legislator matches"""
 
-        if not data:
-            return None
+        data = LegislatorParser.search_legislators(query)
 
         found_members = dict((cls.summarize_bio(bio), bio) for bio in data)
 
