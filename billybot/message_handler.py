@@ -1,3 +1,4 @@
+from .config import SLACK_ATTACHMENT
 
 class MessageHandler(object):
 

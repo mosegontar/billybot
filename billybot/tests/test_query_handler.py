@@ -21,4 +21,3 @@ class TestVoteQuery(unittest.TestCase):
         self.query.parse_query()
         data = self.query.find_member()
         self.assertTrue(len(data) > 1)  
-

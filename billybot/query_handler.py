@@ -2,8 +2,6 @@ from collections import OrderedDict
 
 from billy.sunlightparsers import LegislatorParser, BillParser
 from .message_handler import VoteQueryMessageHandler
-
-
 class QueryHandler(object):
 
     def __init__(self, command, query):
@@ -140,14 +138,9 @@ class VoteQuery(QueryHandler):
         print(self.params['bill_votes'])
         vote = member.parse_roll_call_vote(roll_vote)
 
-        return '{} voted {} on {}.'.format(self.query['member'], 
-                                           vote, 
+        return '{} voted {} on {}.'.format(self.query['member'],
+                                           vote,
                                            self.query['bill_votes'])
-
-
 
     def __repr__(self):
         return "VoteQuery({})".format(self.query)
-
-
-
