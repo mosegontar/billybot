@@ -9,11 +9,19 @@ class BillParser(SunlightAPI):
             self.congress = congress
         self.bill_id = bill_id
         self.sanitize_bill_id()
-
-        # Get data on first request to avoid unnecessary API calls
+        
+        self.bill_data = None
+        bill_data = self.get_bill_data(self.bill_id)
+        if bill_data:
+            self.bill_data = bill_data
+        """
+        'bill_id', 'bill_type', 'chamber', 'congress', 'committee_ids',
+        'congress', 'cosponsors_count', 'enacted_as', 'history', 'introduced_on',
+        'last_action_at', 'last_version', 'last_version_on', 'last_vote_at',
+        'number', 'official_title', 'short_title', 'popular_title', 'related_bills',
+        'sponsor', 'sponsor_id', 'urls', 'withdrawn_cosponsor_count'
+        """
         self._votes = None
-        self._official_title = None
-        self._short_title = None
 
     def sanitize_bill_id(self):
         """Format bill_id. 
@@ -26,16 +34,15 @@ class BillParser(SunlightAPI):
 
         self.bill_id = self.bill_id.lower().replace(' ', '').replace('.', '')
 
-    def summarize_roll_votes(self, vote):
+    def summarize_vote(self, vote):
 
         date = vote['voted_at'].split('T')[0]
-        question = '{}: <{}|{}> ({})'.format(vote['roll_id'],
-                                                       vote['url'], 
-                                                       vote['question'], 
-                                                       date, 
-                                                       vote['url'])
-        return (question, vote['roll_id'])
-      
+
+        vote_summary = '{}: {} ({})'.format(vote['roll_id'],
+                                            vote['question'],
+                                            date)
+
+        return (vote_summary, vote['roll_id'])
 
     @property
     def votes(self):
@@ -43,62 +50,56 @@ class BillParser(SunlightAPI):
 
         if not self._votes:
             votes = self.get_all_bill_votes(self.bill_id)
-            self._votes = [self.summarize_roll_votes(vote) for vote in votes]
+            self._votes = [self.summarize_vote(vote) for vote in votes]
         return self._votes
 
-    @property
-    def official_title(self):
-        """Return bill's official title. If set to None, makes api call."""
-
-        if not self._official_title:
-            data = self.get_official_bill_title(self.bill_id)
-
-            try:
-                self._official_title = data[0].get('official_title')
-            except IndexError:
-                self._official_title = None
-
-        return self._official_title
-
-    @property
-    def short_title(self):
-        """Return bill's short title. If set to None, makes api call."""
-
-        if not self._short_title:
-            data = self.get_short_bill_title(self.bill_id)
-
-            try:
-                self._short_title = data[0].get('short_title')
-            except IndexError:
-                self._short_title = None
-
-        return self._short_title
 
 
-class LegislatorParser(SunlightAPI):
+class MemberParser(SunlightAPI):
 
     def __init__(self, bioguide_id):
 
         super().__init__()
         self.bioguide_id = bioguide_id
+        self.member_data = self.get_member_data(self.bioguide_id)[0]
+        """
+        'bioguide_id', 'birthday', 'chamber', 'contact_form', 'crp_id',
+        'district', 'facebook_id', 'fax', 'fec_ids', 'first_name',
+        'gender', 'govtrack_id', 'icpsr_id', 'in_office', 'last_name',
+        'leadership_role', 'lis_id', 'middle_name', 'name_suffix', 
+        'nickname', 'oc_email', 'ocd_id', 'office', 'party', 'phone', 
+        'senate_class', 'state', 'state_name', 'state_rank', 'term_end', 
+        'term_start', 'thomas_id', 'title', 'twitter_id', 'votesmart_id', 
+        'website', 'youtube_id'
+        """
+
         self._recent_votes = None
+
+    @classmethod
+    def formalize_name(cls, member_bio):
+
+        full_name = ' '.join([member_bio['first_name'], member_bio['last_name']])
+        _formal_name = '{}. {} ({}-{})'.format(member_bio['title'],
+                                               full_name,
+                                               member_bio['party'],
+                                               member_bio['state'])
+        return _formal_name      
 
     @classmethod
     def summarize_bio(cls, bio):
         """Receive full Legislator bio and return tuple summary."""
 
-        name = ' '.join([bio['first_name'], bio['last_name']])
-        person = '{} ({})'.format(name, bio['state'])
-        return (person, bio['bioguide_id'])
+        member_summary = cls.formalize_name(bio)
+
+        return (member_summary, bio['bioguide_id'])
 
     @classmethod
-    def get_bio_data(cls, query):
+    def find_members(cls, query):
         """Return dictionary dict of legislator matches"""
 
-        data = LegislatorParser.search_legislators(query)
+        data = MemberParser.search_legislators(query)
 
-        found_members = dict((cls.summarize_bio(bio), bio) for bio in data)
-
+        found_members = [cls.summarize_bio(bio) for bio in data]
         return found_members
 
     @property
@@ -116,6 +117,8 @@ class LegislatorParser(SunlightAPI):
         try:
             vote = data[0]['voters'][self.bioguide_id]['vote']
         except IndexError:
+            return None
+        except KeyError:
             return None
 
         return vote
