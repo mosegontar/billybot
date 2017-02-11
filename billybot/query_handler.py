@@ -197,10 +197,9 @@ class VoteQuery(QueryHandler):
             return "{} didn't vote on {}".format(self.results_data['member_name'],
                                                  self.query_data['bill_votes'])
 
-        print(self.query_data)
         return '{} voted {} on {}.'.format(self.results_data['member_name'],
                                            vote,
-                                           self.query_data['bill_votes'])
+                                           self.search_parameters['bill_votes'])
 
     def __repr__(self):
         return "VoteQuery({})".format(self.query_data)
