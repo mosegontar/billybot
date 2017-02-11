@@ -5,13 +5,13 @@ class BillParser(SunlightAPI):
 
     def __init__(self, bill_id, congress=None):
         super().__init__()
-        
+
         if congress:
             self.congress = congress
-        
+
         self.bill_id = bill_id
         self.sanitize_bill_id()
-        
+
         bill_data = self.get_bill_data(self.bill_id)
         if bill_data:
             self.bill_data = bill_data[0]
@@ -21,8 +21,8 @@ class BillParser(SunlightAPI):
         self._votes = None
 
     def sanitize_bill_id(self):
-        """Format bill_id. 
-        
+        """Format bill_id.
+
         E.g.: "S. Con.Res.3." => 'sconres3-115'.
         """
 
@@ -59,32 +59,22 @@ class BillParser(SunlightAPI):
 class MemberParser(SunlightAPI):
 
     def __init__(self, bioguide_id):
-
         super().__init__()
         self.bioguide_id = bioguide_id
         self.member_data = self.get_member_data(self.bioguide_id)[0]
-        """
-        'bioguide_id', 'birthday', 'chamber', 'contact_form', 'crp_id',
-        'district', 'facebook_id', 'fax', 'fec_ids', 'first_name',
-        'gender', 'govtrack_id', 'icpsr_id', 'in_office', 'last_name',
-        'leadership_role', 'lis_id', 'middle_name', 'name_suffix', 
-        'nickname', 'oc_email', 'ocd_id', 'office', 'party', 'phone', 
-        'senate_class', 'state', 'state_name', 'state_rank', 'term_end', 
-        'term_start', 'thomas_id', 'title', 'twitter_id', 'votesmart_id', 
-        'website', 'youtube_id'
-        """
-
         self._recent_votes = None
 
     @classmethod
     def formalize_name(cls, member_bio):
 
-        full_name = ' '.join([member_bio['first_name'], member_bio['last_name']])
-        _formal_name = '{}. {} ({}-{})'.format(member_bio['title'],
-                                               full_name,
-                                               member_bio['party'],
-                                               member_bio['state'])
-        return _formal_name      
+        _full_name = ' '.join([member_bio['first_name'],
+                              member_bio['last_name']])
+
+        formal_name = '{}. {} ({}-{})'.format(member_bio['title'],
+                                              _full_name,
+                                              member_bio['party'],
+                                              member_bio['state'])
+        return formal_name
 
     @classmethod
     def summarize_bio(cls, bio):
@@ -109,17 +99,17 @@ class MemberParser(SunlightAPI):
 
         if not self._recent_votes:
             self._recent_votes = self.get_legislator_recent_votes(self.bioguide_id)
+
         return self._recent_votes
 
     def parse_roll_call_vote(self, roll_id):
         """Return legislator's roll call vote (Yea or Nay)."""
+
         data = self.get_roll_call_vote(roll_id, self.bioguide_id)
 
         try:
             vote = data[0]['voters'][self.bioguide_id]['vote']
-        except IndexError:
-            return None
-        except KeyError:
+        except:
             return None
 
         return vote

@@ -25,7 +25,7 @@ class MessageHandler(object):
             results = self.make_list_string()
 
         reply = self.message + '\n' + results
-        return reply   
+        return reply
 
     def create_attachment(self, **kwargs):
 
@@ -35,13 +35,28 @@ class MessageHandler(object):
 
         return json.dumps([self.attachment])
 
+
 class ErrorMessageHandler(MessageHandler):
+
+    def __init__(self, results, error_type):
+        super().__init__(results=results)
+        self.error_type = error_type
 
     def no_matches(self):
         reply = "Sorry, I wasn't able to find matches for "
-        results_to_str = join(["'{}'".format(r) for r in self.results], conj='and')
+        results_to_str = join(["'{}'".format(r) for r in self.results],
+                              conj='and')
         reply = reply + results_to_str
         return reply
+
+    def bad_query(self):
+        return "Sorry, your query is not properly formatted"
+
+    def make_error_msg(self):
+        if self.error_type == 'BAD_QUERY':
+            return self.bad_query()
+        if self.error_type == 'NO_MATCH':
+            return self.no_matches()
 
 
 class VoteQueryMessageHandler(MessageHandler):
@@ -54,9 +69,9 @@ class VoteQueryMessageHandler(MessageHandler):
         """Return a specific message."""
 
         MESSAGES = dict()
-        
+
         MESSAGES[0] = "Okay, "
-        
+
         MESSAGES[1] = "I found multiple matches for '{}': ".format(self.query)
         MESSAGES[2] = "Still finding multiple matches for '{}': ".format(self.query)
         MESSAGES[3] = "Okay I guess this isn't work out very well: "
@@ -85,11 +100,11 @@ slack_attachment = {
     "author_name": None ,
     "author_link": None,
     "title": None,
-    "title_link": None, 
+    "title_link": None,
     "text": None, #"Optional text that appears within the attachment",
-    "footer": None, 
+    "footer": None,
     "ts": 123456789
-}        
+}
 
 
 

@@ -20,8 +20,8 @@ slack_attachment = {
     "author_name": None ,
     "author_link": None,
     "title": None,
-    "title_link": None, 
+    "title_link": None,
     "text": None, #"Optional text that appears within the attachment",
-    "footer": None, 
+    "footer": None,
     "ts": 123456789
 }

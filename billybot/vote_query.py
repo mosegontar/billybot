@@ -13,24 +13,32 @@ class VoteQuery(BaseQueryHandler):
 
         self.msg_handler = VoteQueryMessageHandler
 
+        self.required_parameters = ['member:', 'bill:']
+
+    @staticmethod
+    def query_setup(message):
+
+        vote_query = VoteQuery(message)
+        errors = vote_query.parse_query()
+        if errors:
+            error_handler = ErrorMessageHandler(results=errors,
+                                                error_type=vote_query.ERROR)
+            reply = error_handler.make_error_msg()
+            return True, reply
+
+        return False, vote_query
+
     @staticmethod
     def run_query(message, existing_query_object=None):
         """Get and return query object and reply for user"""
 
         # create a VoteQuery object if none exists
         if not existing_query_object:
-
-            if 'member:' not in message and 'bill:' not in message:
-                # query not properly formatted
-                return False
-
-            vote_query = VoteQuery(message)
-            errors = vote_query.parse_query()
-
+            errors, resp = VoteQuery.query_setup(message)
             if errors:
-                error_handler = ErrorMessageHandler(results=errors)
-                reply = error_handler.no_matches()
-                return None, reply
+                return None, resp
+            else:
+                vote_query = resp
         else:
             vote_query = existing_query_object
             vote_query.narrow_parameters(message)
@@ -42,11 +50,18 @@ class VoteQuery(BaseQueryHandler):
     def parse_query(self):
         """Break up query string and set instance variables"""
 
+        errors = self.validate_query()
+        if errors:
+            return errors
+
         _member, _bill = self.query_data['original_query'].split('bill:')
-        self.query_data['member'] = _member.strip('member:').strip()
+        print(_member)
+        self.query_data['member'] = _member.replace('member:', '').strip()
         self.query_data['bill_votes'] = _bill.strip()
 
         errors = self.initialize_params()
+        if errors:
+            self.ERROR = 'NO_MATCH'
         return errors
 
     def initialize_params(self):
@@ -74,7 +89,7 @@ class VoteQuery(BaseQueryHandler):
 
     def finalize_params(self, key):
         """Set search_parameters their proper ID strings
-        
+
         Each congress member has a 'bioguide_id' and
         each congressional bill has associated with it a number of 'roll_id'
         """
@@ -89,7 +104,7 @@ class VoteQuery(BaseQueryHandler):
             self.search_parameters['bill_votes'] = roll_id
 
     def set_bill_results_data(self, bill):
-        
+
         bill_data = bill.bill_data
 
         if bill_data.get('short_title'):
@@ -98,7 +113,7 @@ class VoteQuery(BaseQueryHandler):
             self.results_data['bill_title'] = bill_data['official_title']
 
         self.results_data['bill_id'] = bill_data['bill_id']
-        self.results_data['bill_chamber'] = bill_data['chamber']      
+        self.results_data['bill_chamber'] = bill_data['chamber']
         self.results_data['bill_url'] = bill_data['urls']['congress']
 
     def set_member_results_data(self, bioguide_id):

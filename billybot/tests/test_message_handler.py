@@ -13,7 +13,7 @@ class TestMessageHandler(unittest.TestCase):
 class TestVoteQueryMessageHandler(unittest.TestCase):
 
     def create_handler(self, data=None):
-        
+
         if not data:
             data = {'query': 'Warren',
                     'results': ['Elizabeth Warren (MA)', 'Elizabeth Warren (ME)'],
@@ -30,7 +30,7 @@ class TestVoteQueryMessageHandler(unittest.TestCase):
     def test_can_get_correct_message(self):
         handler = self.create_handler()
         self.assertEqual(handler.message, "Okay, ")
-        
+
         data = {'query': 'Warren',
                 'results': ['Elizabeth Warren (MA)', 'Elizabeth Warren (ME)'],
                 'msg_num': 1}

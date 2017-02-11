@@ -4,22 +4,36 @@ from collections import OrderedDict
 class BaseQueryHandler(object):
 
     def __init__(self, command, query):
-        
+
         self.query_data = dict()
         self.query_data['original_query'] = query.split(command)[1].strip()
+
+        self.required_parameters = []
         self.search_parameters = OrderedDict()
 
         self.msg_handler = None
         self.results_data = dict()
 
         self.AWAITING_REPLY = 0
+        self.ERROR = None
+
+    def validate_query(self):
+        """Check that required parameters are in query."""
+
+        errors = []
+        for param in self.required_parameters:
+            if param not in self.query_data['original_query']:
+                self.ERROR = 'BAD_QUERY'
+                errors.append(param)
+
+        return errors
 
     def select(self, keys, item_list):
         """Select items from item_list that contain all keys"""
 
         if type(keys) == str:
             keys = keys.split()
-        
+
         if len(keys) == 1:
             try:
                 return [item_list[int(keys[0])-1]]
@@ -28,7 +42,7 @@ class BaseQueryHandler(object):
 
         # itm[0] contains the data with which user is making selection
         results = [itm for itm in item_list if all([k in itm[0] for k in keys])]
-        
+
         return results
 
     def narrow_parameters(self, message):

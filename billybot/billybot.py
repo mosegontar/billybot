@@ -48,12 +48,12 @@ class BillyBot(object):
     def send_message(self, username, message, channel):
         """Send message back to user via slack api call."""
 
-        SLACK_CLIENT.api_call("chat.postMessage", 
-                              channel=channel, 
-                              text=message, 
-                              as_user=True, 
+        SLACK_CLIENT.api_call("chat.postMessage",
+                              channel=channel,
+                              text=message,
+                              as_user=True,
                               unfurl_media=False,
-                              unfurl_links=False)        
+                              unfurl_links=False)
 
     def parse_slack_output(self, stream_output):
         """
@@ -78,8 +78,8 @@ class BillyBot(object):
                     break
 
                 if (channel and text) and message['user'] != BOT_ID:
-                    
-                    username = "<@{}>".format(user_id) 
+
+                    username = "<@{}>".format(user_id)
 
                     # Channels that start with D are direct messages
                     if channel.startswith('D'):
