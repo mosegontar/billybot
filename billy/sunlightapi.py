@@ -31,7 +31,7 @@ class SunlightAPI(object):
         return SunlightAPI.get_results(resp.text)
 
     def get_member_data(self, bioguide_id):
-        url = self.domain + 'legislators?bioguide_id'.format(bioguide_id)
+        url = self.domain + 'legislators?bioguide_id={}'.format(bioguide_id)
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
 
@@ -53,5 +53,10 @@ class SunlightAPI(object):
 
     def get_all_bill_votes(self, bill_id):
         url = self.domain + 'votes?bill_id={}&per_page=50'.format(bill_id)
+        resp = requests.get(url)
+        return SunlightAPI.get_results(resp.text)
+
+    def get_vote_data(self, roll_id):
+        url = self.domain + 'votes?roll_id={}'.format(roll_id)
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)

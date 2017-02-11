@@ -88,24 +88,6 @@ class VoteQuery(QueryHandler):
         self.search_parameters['member'] = None
         self.search_parameters['bill_votes'] = None
 
-        self.results_data['member_name'] = None
-        self.results_data['member_title'] = None
-        self.results_data['member_chamber'] = None
-        self.results_data['member_party'] = None
-        self.results_data['member_state'] = None
-        self.results_data['member_url'] = None
-
-        self.results_data['bill_id'] = None
-        self.results_data['bill_title'] = None
-        self.results_data['bill_chamber'] = None      
-        self.results_data['bill_url'] = None
-
-        self.results_data['roll_question'] = None
-        self.results_data['roll_url'] = None
-        self.results_data['roll_id'] = None
-        self.results_data['roll_data'] = None
-
-
         self.handler = VoteQueryMessageHandler
 
     @staticmethod
@@ -215,7 +197,8 @@ class VoteQuery(QueryHandler):
             return "{} didn't vote on {}".format(self.results_data['member_name'],
                                                  self.query_data['bill_votes'])
 
-        return '{} voted {} on {}.'.format(self.query_data['member'],
+        print(self.query_data)
+        return '{} voted {} on {}.'.format(self.results_data['member_name'],
                                            vote,
                                            self.query_data['bill_votes'])
 

@@ -13,7 +13,7 @@ class BillParser(SunlightAPI):
         self.bill_data = None
         bill_data = self.get_bill_data(self.bill_id)
         if bill_data:
-            self.bill_data = bill_data
+            self.bill_data = bill_data[0]
         """
         'bill_id', 'bill_type', 'chamber', 'congress', 'committee_ids',
         'congress', 'cosponsors_count', 'enacted_as', 'history', 'introduced_on',
@@ -53,6 +53,9 @@ class BillParser(SunlightAPI):
             self._votes = [self.summarize_vote(vote) for vote in votes]
         return self._votes
 
+    @staticmethod
+    def get_roll_vote_data(self, roll_id):
+        vote_data = self.get_vote_data(roll_id)[0]
 
 
 class MemberParser(SunlightAPI):
