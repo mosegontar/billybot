@@ -1,15 +1,20 @@
 from collections import OrderedDict
 
-from billy.sunlightparsers import LegislatorParser, BillParser
-from .message_handler import VoteQueryMessageHandler
+from billy.sunlightparsers import MemberParser, BillParser
+from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
+
+
 class QueryHandler(object):
 
     def __init__(self, command, query):
+        
+        self.query_data = dict()
+        self.query_data['original_query'] = query.split(command)[1].strip()
 
-        self.query = dict()
-        self.query['original_query'] = query.split(command)[1].strip()
+        self.search_parameters = OrderedDict()
 
-        self.params = OrderedDict()
+        self.results_data = dict()
+
         self.AWAITING_REPLY = 0
 
     def select(self, keys, item_list):
@@ -20,7 +25,7 @@ class QueryHandler(object):
         
         if len(keys) == 1:
             try:
-                return item_list[int(keys[0])-1]
+                return [item_list[int(keys[0])-1]]
             except:
                 pass
 
@@ -30,17 +35,18 @@ class QueryHandler(object):
         return results
 
     def narrow_parameters(self, message):
-        """Narrow down data based on words in message"""
+        """Narrow down list of data based on words in message"""
 
         if self.AWAITING_REPLY:
-            for key, val in self.params.items():
+            for key, val in self.search_parameters.items():
                 if type(val) == list:
-                    self.params[key] = self.select(message, val)
+                    self.search_parameters[key] = self.select(message, val)
                     break
 
     def get_reply(self):
+        """Returns reply based on state"""
 
-        for key, value in self.params.items():
+        for key, value in self.search_parameters.items():
             if type(value) == str:
                 pass
             elif len(value) == 1:
@@ -54,19 +60,20 @@ class QueryHandler(object):
 
         self.AWAITING_REPLY = 0
         resolved_query = self.resolve_query()
-        
+
         msg_handler = self.prepare_message_handler(results=resolved_query)
         reply = msg_handler.make_reply()
         return reply
 
     def prepare_message_handler(self, results=None, key=None):
+        """Create and return a MessageHandler with query results"""
 
         if not results:
-            results = [itm[0] for itm in self.params[key]]
+            results = [itm[0] for itm in self.search_parameters[key]]
 
-        message_data = {'msg_num': self.AWAITING_REPLY, 
+        message_data = {'msg_num': self.AWAITING_REPLY,
                         'results': results,
-                        'query': self.query.get(key)}
+                        'query': self.query_data.get(key)}
 
         msg_handler = self.handler(**message_data)
 
@@ -76,28 +83,53 @@ class QueryHandler(object):
 class VoteQuery(QueryHandler):
 
     def __init__(self, query):
-        super().__init__('vote', query)       
-      
-        self.params['member'] = None
-        self.params['bill_votes'] = None
-        
+        super().__init__('vote', query)
+
+        self.search_parameters['member'] = None
+        self.search_parameters['bill_votes'] = None
+
+        self.results_data['member_name'] = None
+        self.results_data['member_title'] = None
+        self.results_data['member_chamber'] = None
+        self.results_data['member_party'] = None
+        self.results_data['member_state'] = None
+        self.results_data['member_url'] = None
+
+        self.results_data['bill_id'] = None
+        self.results_data['bill_title'] = None
+        self.results_data['bill_chamber'] = None      
+        self.results_data['bill_url'] = None
+
+        self.results_data['roll_question'] = None
+        self.results_data['roll_url'] = None
+        self.results_data['roll_id'] = None
+        self.results_data['roll_data'] = None
+
+
         self.handler = VoteQueryMessageHandler
 
     @staticmethod
     def run_query(message, existing_query_object=None):
+        """Get and return query object and reply for user"""
 
         # create a VoteQuery object if none exists
         if not existing_query_object:
+
             if 'member:' not in message and 'bill:' not in message:
                 # query not properly formatted
                 return False
-                
+
             vote_query = VoteQuery(message)
-            vote_query.parse_query()
+            errors = vote_query.parse_query()
+
+            if errors:
+                error_handler = ErrorMessageHandler(results=errors)
+                reply = error_handler.no_matches()
+                return None, reply
         else:
             vote_query = existing_query_object
             vote_query.narrow_parameters(message)
-        
+
         reply = vote_query.get_reply()
 
         return vote_query, reply
@@ -105,42 +137,87 @@ class VoteQuery(QueryHandler):
     def parse_query(self):
         """Break up query string and set instance variables"""
 
-        _member, _bill = self.query['original_query'].split('bill:')
-        self.query['member'] = _member.strip('member:').strip()
-        self.query['bill_votes'] = _bill.strip()
+        _member, _bill = self.query_data['original_query'].split('bill:')
+        self.query_data['member'] = _member.strip('member:').strip()
+        self.query_data['bill_votes'] = _bill.strip()
 
-        self.initialize_params()
+        errors = self.initialize_params()
+        return errors
 
     def initialize_params(self):
         """Makes API call and sets params if not already set"""
 
-        if not self.params.get('member'):
-            members = list(LegislatorParser.get_bio_data(self.query['member'].title()))
-            self.params['member'] = members
+        no_results_found = []
 
-        if not self.params.get('bill_votes'):
-            bill = BillParser(self.query['bill_votes'])
-            roll_votes = bill.votes
-            self.params['bill_votes'] = roll_votes
+        if not self.search_parameters.get('member'):
+
+            found_members = MemberParser.find_members(self.query_data['member'].title())
+            if not found_members:
+                no_results_found.append(self.query_data['member'])
+            else:
+                self.search_parameters['member'] = found_members
+
+        if not self.search_parameters.get('bill_votes'):
+
+            bill = BillParser(self.query_data['bill_votes'])
+            if not bill.bill_data or not bill.votes:
+                no_results_found.append(self.query_data['bill_votes'])
+            else:
+                self.search_parameters['bill_votes'] = bill.votes
+
+        return no_results_found
 
     def finalize_params(self, key):
+        """Set search_parameters their proper ID strings
+        
+        Each congress member has a 'bioguide_id' and
+        each congressional bill has associated with it a number of 'roll_id'
+        """
 
         if key == 'member':
-            self.params['member'] = self.params['member'][0][1]
+            bioguide_id = self.search_parameters['member'][0][1]
+            self.search_parameters['member'] = bioguide_id
+            self.set_member_results_data(bioguide_id)
 
         if key == 'bill_votes':
-            self.params['bill_votes'] = self.params['bill_votes'][0][1]
+            roll_id = self.search_parameters['bill_votes'][0][1]
+            self.search_parameters['bill_votes'] = roll_id
+
+    def set_bill_results_data(self, bill):
+        
+        if bill.bill_data.get('short_title'):
+            self.results_data['bill_title'] = bill.bill_data['short_title']
+        else:
+            self.results_data['bill_title'] = bill.bill_data['official_title']
+
+        self.results_data['bill_id'] = bill.bill_data['bill_id']
+        self.results_data['bill_chamber'] = bill.bill_data['chamber']      
+        self.results_data['bill_url'] = bill.bill_data['urls']['congress']
+
+    def set_member_results_data(self, bioguide_id):
+        member = MemberParser(bioguide_id)
+
+        self.results_data['member_name'] = member.formalize_name(member.member_data)
+        self.results_data['member_title'] = member.member_data['title']
+        self.results_data['member_chamber'] = member.member_data['chamber']
+        self.results_data['member_party'] = member.member_data['party']
+        self.results_data['member_state'] = member.member_data['state']
+        self.results_data['member_url'] = member.member_data['website']
+
 
     def resolve_query(self):
+        """Return the member's vote (Yea or Nay)"""
 
-        member = LegislatorParser(self.params['member'])
-        roll_vote = self.params['bill_votes']
-        print(self.params['bill_votes'])
+        member = MemberParser(self.search_parameters['member'])
+        roll_vote = self.search_parameters['bill_votes']
         vote = member.parse_roll_call_vote(roll_vote)
+        if not vote:
+            return "{} didn't vote on {}".format(self.results_data['member_name'],
+                                                 self.query_data['bill_votes'])
 
-        return '{} voted {} on {}.'.format(self.query['member'],
+        return '{} voted {} on {}.'.format(self.query_data['member'],
                                            vote,
-                                           self.query['bill_votes'])
+                                           self.query_data['bill_votes'])
 
     def __repr__(self):
-        return "VoteQuery({})".format(self.query)
+        return "VoteQuery({})".format(self.query_data)
