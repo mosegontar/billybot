@@ -17,7 +17,6 @@ class MessageTriage(object):
 
         Return QueryHandler object and reply for user.
         """
-
         if self.query_object and self.query_object.AWAITING_REPLY:
             query, reply = self.query_object.run_query(self.message, self.query_object)
             return query, reply
@@ -25,6 +24,8 @@ class MessageTriage(object):
         if self.message.startswith('vote'):
             query, reply = VoteQuery.run_query(self.message)
             return query, reply
+
+        return None, "I'm sorry, I'm afraid I can't do that. "
 
 
 class BillyBot(object):

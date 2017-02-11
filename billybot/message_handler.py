@@ -1,17 +1,21 @@
-from .config import SLACK_ATTACHMENT
+import json
+from .config import slack_attachment
+
+from eng_join import join
 
 class MessageHandler(object):
 
-    def __init__(self, query, results):
+    def __init__(self, results, query=None):
 
         self.results = results
         self.query = query
+        self.attachment = slack_attachment
 
     def make_list_string(self):
         """Return string of results."""
 
-        numbered = ['[{}] {}'.format(i+1, res) for i, res in enumerate(self.results)]
-        return "\n".join(numbered)
+        string_list = ['[{}] {}'.format(i+1, res) for i, res in enumerate(self.results)]
+        return "\n".join(string_list)
 
     def make_reply(self):
         """Return full reply to user query."""
@@ -23,12 +27,27 @@ class MessageHandler(object):
         reply = self.message + '\n' + results
         return reply   
 
+    def create_attachment(self, **kwargs):
+
+        for key, value in kwargs:
+            if self.attachment.get(key):
+                self.attachment[key] = value
+
+        return json.dumps([self.attachment])
+
+class ErrorMessageHandler(MessageHandler):
+
+    def no_matches(self):
+        reply = "Sorry, I wasn't able to find matches for "
+        results_to_str = join(["'{}'".format(r) for r in self.results], conj='and')
+        reply = reply + results_to_str
+        return reply
+
 
 class VoteQueryMessageHandler(MessageHandler):
-    #query, results, msg_num
 
     def __init__(self, **kwargs):
-        super().__init__(kwargs['query'], kwargs['results'])
+        super().__init__(kwargs['results'], kwargs['query'])
         self.message = self.get_message(kwargs['msg_num'])
 
     def get_message(self, msg_num):
@@ -45,6 +64,32 @@ class VoteQueryMessageHandler(MessageHandler):
         # need to remember to reset AWAITING_REPLY when moving from one vote param to the next
 
         return MESSAGES.get(msg_num, "Something went wrong")
+
+    def format_attachment(self):
+        results = self.make_list_string()
+
+        attachment_dict = dict()
+        attachment_dict['fallback'] = results
+        attachment_dict['text'] = results
+
+
+
+
+
+
+
+slack_attachment = {
+    "fallback": None, # "Required plain-text summary of the attachment."
+    "color": None, # color hex value
+    "pretext": None, #"Optional text that appears above the attachment block"
+    "author_name": None ,
+    "author_link": None,
+    "title": None,
+    "title_link": None, 
+    "text": None, #"Optional text that appears within the attachment",
+    "footer": None, 
+    "ts": 123456789
+}        
 
 
 

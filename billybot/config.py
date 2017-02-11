@@ -13,17 +13,15 @@ SLACK_CLIENT = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 READ_WEBSOCKET_DELAY = 1
 
 
-SLACK_ATTACHMENT = [
-    {
-        "fallback": None, # "Required plain-text summary of the attachment."
-        "color": None, # color hex value
-        "pretext": None, #"Optional text that appears above the attachment block"
-        "author_name": None ,
-        "author_link": None,
-        "title": None,
-        "title_link": None, 
-        "text": None, #"Optional text that appears within the attachment",
-        "footer": None, 
-        "ts": 123456789
-    }
-]
+slack_attachment = {
+    "fallback": None, # "Required plain-text summary of the attachment."
+    "color": None, # color hex value
+    "pretext": None, #"Optional text that appears above the attachment block"
+    "author_name": None ,
+    "author_link": None,
+    "title": None,
+    "title_link": None, 
+    "text": None, #"Optional text that appears within the attachment",
+    "footer": None, 
+    "ts": 123456789
+}
