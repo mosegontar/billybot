@@ -2,7 +2,7 @@ import os
 import time
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
-from .query_handler import VoteQuery
+from .vote_query import VoteQuery
 
 
 class MessageTriage(object):

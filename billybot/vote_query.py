@@ -1,5 +1,5 @@
-from query_handler import BaseQueryHandler
 from billy.sunlightparsers import MemberParser, BillParser
+from .query_handler import BaseQueryHandler
 from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 
 
@@ -90,24 +90,27 @@ class VoteQuery(BaseQueryHandler):
 
     def set_bill_results_data(self, bill):
         
-        if bill.bill_data.get('short_title'):
-            self.results_data['bill_title'] = bill.bill_data['short_title']
-        else:
-            self.results_data['bill_title'] = bill.bill_data['official_title']
+        bill_data = bill.bill_data
 
-        self.results_data['bill_id'] = bill.bill_data['bill_id']
-        self.results_data['bill_chamber'] = bill.bill_data['chamber']      
-        self.results_data['bill_url'] = bill.bill_data['urls']['congress']
+        if bill_data.get('short_title'):
+            self.results_data['bill_title'] = bill_data['short_title']
+        else:
+            self.results_data['bill_title'] = bill_data['official_title']
+
+        self.results_data['bill_id'] = bill_data['bill_id']
+        self.results_data['bill_chamber'] = bill_data['chamber']      
+        self.results_data['bill_url'] = bill_data['urls']['congress']
 
     def set_member_results_data(self, bioguide_id):
         member = MemberParser(bioguide_id)
+        member_data = member.member_data
 
-        self.results_data['member_name'] = member.formalize_name(member.member_data)
-        self.results_data['member_title'] = member.member_data['title']
-        self.results_data['member_chamber'] = member.member_data['chamber']
-        self.results_data['member_party'] = member.member_data['party']
-        self.results_data['member_state'] = member.member_data['state']
-        self.results_data['member_url'] = member.member_data['website']
+        self.results_data['member_name'] = member.formalize_name(member_data)
+        self.results_data['member_title'] = member_data['title']
+        self.results_data['member_chamber'] = member_data['chamber']
+        self.results_data['member_party'] = member_data['party']
+        self.results_data['member_state'] = member_data['state']
+        self.results_data['member_url'] = member_data['website']
 
     def set_roll_vote_data(self, roll_id):
         vote_data = BillParser.get_roll_vote_data(roll_id)

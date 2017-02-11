@@ -5,22 +5,19 @@ class BillParser(SunlightAPI):
 
     def __init__(self, bill_id, congress=None):
         super().__init__()
+        
         if congress:
             self.congress = congress
+        
         self.bill_id = bill_id
         self.sanitize_bill_id()
         
-        self.bill_data = None
         bill_data = self.get_bill_data(self.bill_id)
         if bill_data:
             self.bill_data = bill_data[0]
-        """
-        'bill_id', 'bill_type', 'chamber', 'congress', 'committee_ids',
-        'congress', 'cosponsors_count', 'enacted_as', 'history', 'introduced_on',
-        'last_action_at', 'last_version', 'last_version_on', 'last_vote_at',
-        'number', 'official_title', 'short_title', 'popular_title', 'related_bills',
-        'sponsor', 'sponsor_id', 'urls', 'withdrawn_cosponsor_count'
-        """
+        else:
+            self.bill_data = None
+
         self._votes = None
 
     def sanitize_bill_id(self):
@@ -54,8 +51,8 @@ class BillParser(SunlightAPI):
         return self._votes
 
     @staticmethod
-    def get_roll_vote_data(self, roll_id):
-        vote_data = self.get_vote_data(roll_id)[0]
+    def get_roll_vote_data(roll_id):
+        vote_data = BillParser.get_vote_data(roll_id)[0]
         return vote_data
 
 
