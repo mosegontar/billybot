@@ -30,6 +30,11 @@ class SunlightAPI(object):
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
 
+    def get_member_data(self, bioguide_id):
+        url = self.domain + 'legislators?bioguide_id'.format(bioguide_id)
+        resp = requests.get(url)
+        return SunlightAPI.get_results(resp.text)
+
     def get_roll_call_vote(self, roll_id, bioguide_id):
         url = self.domain + 'votes?roll_id={}&fields=voters.{}.vote'.format(roll_id,
                                                                             bioguide_id)
@@ -41,18 +46,12 @@ class SunlightAPI(object):
         resp = requests.get(url)        
         return SunlightAPI.get_results(resp.text)
 
+    def get_bill_data(self, bill_id):
+        url = self.domain + 'bills?bill_id={}'.format(bill_id)
+        resp = requests.get(url)
+        return SunlightAPI.get_results(resp.text)
+
     def get_all_bill_votes(self, bill_id):
         url = self.domain + 'votes?bill_id={}&per_page=50'.format(bill_id)
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
-
-    def get_official_bill_title(self, bill_id):
-        url = self.domain + 'bills?bill_id={}&fields=official_title'.format(bill_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
-
-    def get_short_bill_title(self, bill_id):
-        url = self.domain + 'bills?bill_id={}&fields=short_title'.format(bill_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
-        
