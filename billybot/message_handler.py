@@ -31,8 +31,8 @@ class MessageHandler(object):
         return reply, results
 
     def create_attachment(self, **kwargs):
-        stuff = {'text': self.make_list_string()}
-        for key, value in stuff.items():
+
+        for key, value in kwargs.items():
             if key in self.attachment.keys():
                 self.attachment[key] = value
 

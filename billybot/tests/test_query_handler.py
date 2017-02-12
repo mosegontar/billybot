@@ -1,23 +1,28 @@
 import unittest
 
-from billybot.query_handler import MessageTriage
+from billybot.billybot import MessageTriage
+from billybot.vote_query import VoteQuery
 
 class TestVoteQuery(unittest.TestCase):
 
     def setUp(self):
-        self.message = "vote member: Bishop bill: S. Con. Res. 3"
-        triage = MessageTriage(self.message)
-        self.query = triage.identify_query()
+        message = "vote member: Warren bill: S.Con.Res.3"
+        self.errors, self.resp = VoteQuery.query_setup(message)
 
-    def test_can_correctly_triage_vote_query(self):
-        self.assertEqual(repr(self.query), 'VoteQuery({})'.format('member: Bishop bill: S. Con. Res. 3'))
+    def test_query_setup(self):
+        self.assertFalse(self.errors)
+        self.assertIn("member: Warren bill: S.Con.Res.3", repr(self.resp))
 
-    def test_can_correctly_parse_query(self):
-        self.query.parse_query()
-        self.assertEqual(self.query.member_query, 'Bishop')
-        self.assertEqual(self.query.bill_query, 'S. Con. Res. 3')
+    def test_query_errors(self):
+        message = "vote member: Gandalf bill: S.Con.Res.3"
+        self.errors, self.resp = VoteQuery.query_setup(message)
+        self.assertTrue(self.errors)
+        self.assertEqual(self.resp, "Sorry, I wasn't able to find matches for 'Gandalf'")
 
-    def test_find_member(self):
-        self.query.parse_query()
-        data = self.query.find_member()
-        self.assertTrue(len(data) > 1)
+        message = "vote Gandalf bill: S.Con.Res.3"
+        self.errors, self.resp = VoteQuery.query_setup(message)
+        self.assertEqual(self.resp, "Sorry, your query is not properly formatted")
+
+    def test_parse_query(self):
+        self.assertEqual(self.resp.query_data['member'], 'Warren')
+        self.assertEqual(self.resp.query_data['bill_votes'], 'S.Con.Res.3')

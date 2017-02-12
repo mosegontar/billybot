@@ -146,4 +146,4 @@ class VoteQuery(BaseQueryHandler):
                                            self.search_parameters['bill_votes'])
 
     def __repr__(self):
-        return "VoteQuery({})".format(self.query_data)
+        return "VoteQuery({})".format(self.query_data['original_query'])

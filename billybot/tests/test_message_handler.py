@@ -7,7 +7,7 @@ class TestMessageHandler(unittest.TestCase):
 
     def test_can_import_slack_attachment_config(self):
         import billybot.message_handler as billy_handler
-        self.assertEqual(type(billy_handler.SLACK_ATTACHMENT), list)
+        self.assertEqual(type(billy_handler.slack_attachment), dict)
 
 
 class TestVoteQueryMessageHandler(unittest.TestCase):
