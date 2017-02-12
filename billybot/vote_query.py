@@ -77,6 +77,8 @@ class VoteQuery(BaseQueryHandler):
         if not self.search_parameters.get('bill_votes'):
 
             bill = BillParser(self.query_data['bill_votes'])
+            self.set_bill_results_data(bill)
+
             if not bill.bill_data or not bill.votes:
                 no_results_found.append(self.query_data['bill_votes'])
             else:
@@ -129,7 +131,7 @@ class VoteQuery(BaseQueryHandler):
 
         self.results_data['roll_id'] = vote_data['roll_id']
         self.results_data['roll_question'] = vote_data['question']
-        self.results_data['roll_url'] = vote_data['roll_id']
+        self.results_data['roll_url'] = vote_data['url']
 
     def resolve_query(self):
         """Return the member's vote (Yea or Nay)"""

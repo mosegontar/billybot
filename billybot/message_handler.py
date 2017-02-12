@@ -5,9 +5,10 @@ from eng_join import join
 
 class MessageHandler(object):
 
-    def __init__(self, results, query=None):
+    def __init__(self, results, results_data, query=None):
 
         self.results = results
+        self.results_data = results_data
         self.query = query
         self.attachment = slack_attachment
         self.message = None
@@ -24,7 +25,8 @@ class MessageHandler(object):
         results = self.results
         if type(results) == list:
             reply = self.message
-            results = self.create_attachment()
+            attachment_dict = self.format_attachment()
+            results = self.create_attachment(**attachment_dict)
         else:
             reply = self.message + ' ' + self.results
 
@@ -35,14 +37,13 @@ class MessageHandler(object):
         for key, value in kwargs.items():
             if key in self.attachment.keys():
                 self.attachment[key] = value
-
         return json.dumps([self.attachment])
 
 
 class ErrorMessageHandler(MessageHandler):
 
     def __init__(self, results, error_type):
-        super().__init__(results=results)
+        super().__init__(results=results, results_data=None)
         self.error_type = error_type
 
     def no_matches(self):
@@ -65,10 +66,11 @@ class ErrorMessageHandler(MessageHandler):
 class VoteQueryMessageHandler(MessageHandler):
 
     def __init__(self, **kwargs):
-        super().__init__(kwargs['results'], kwargs['query'])
+        super().__init__(kwargs['results'],
+                         kwargs['results_data'],
+                         kwargs['query'])
 
         self.message = self.get_message(kwargs['msg_num'])
-        self.results_data= kwargs['results_data']
 
     def get_message(self, msg_num):
         """Return a specific message."""
@@ -82,6 +84,12 @@ class VoteQueryMessageHandler(MessageHandler):
         MESSAGES[3] = "Okay I guess this isn't work out very well: "
 
         return MESSAGES.get(msg_num, "Something went wrong")
+
+    def format_attachment(self):
+
+        attachment_dict = dict()
+        attachment_dict['text'] = self.make_list_string()
+        return attachment_dict
 
 
 

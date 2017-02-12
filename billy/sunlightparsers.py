@@ -52,7 +52,8 @@ class BillParser(SunlightAPI):
 
     @staticmethod
     def get_roll_vote_data(roll_id):
-        vote_data = BillParser.get_vote_data(roll_id)[0]
+        api = SunlightAPI()
+        vote_data = api.get_vote_data(roll_id)[0]
         return vote_data
 
 
