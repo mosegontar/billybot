@@ -10,6 +10,7 @@ class MessageHandler(object):
         self.results = results
         self.query = query
         self.attachment = slack_attachment
+        self.message = None
 
     def make_list_string(self):
         """Return string of results."""
@@ -19,19 +20,19 @@ class MessageHandler(object):
 
     def make_reply(self):
         """Return full reply to user query."""
-
         results = self.results
         if type(results) == list:
-            results = self.make_list_string()
+            results = self.create_attachment()
 
-        reply = self.message + '\n' + results
-        return reply
+        reply = self.message
+        return reply, results
 
     def create_attachment(self, **kwargs):
-
-        for key, value in kwargs:
-            if self.attachment.get(key):
+        stuff = {'text': self.make_list_string()}
+        for key, value in stuff.items():
+            if key in self.attachment.keys():
                 self.attachment[key] = value
+                print(self.attachment)
 
         return json.dumps([self.attachment])
 
@@ -63,7 +64,9 @@ class VoteQueryMessageHandler(MessageHandler):
 
     def __init__(self, **kwargs):
         super().__init__(kwargs['results'], kwargs['query'])
+
         self.message = self.get_message(kwargs['msg_num'])
+        self.results_data= kwargs['results_data']
 
     def get_message(self, msg_num):
         """Return a specific message."""
@@ -76,16 +79,7 @@ class VoteQueryMessageHandler(MessageHandler):
         MESSAGES[2] = "Still finding multiple matches for '{}': ".format(self.query)
         MESSAGES[3] = "Okay I guess this isn't work out very well: "
 
-        # need to remember to reset AWAITING_REPLY when moving from one vote param to the next
-
         return MESSAGES.get(msg_num, "Something went wrong")
-
-    def format_attachment(self):
-        results = self.make_list_string()
-
-        attachment_dict = dict()
-        attachment_dict['fallback'] = results
-        attachment_dict['text'] = results
 
 
 

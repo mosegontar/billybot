@@ -65,18 +65,18 @@ class BaseQueryHandler(object):
                 self.finalize_params(key)
             else:
                 self.AWAITING_REPLY += 1
-                msg_handler = self.prepare_message_handler(key=key)
-                reply = msg_handler.make_reply()
-                return reply
+                msg_handler = self.prepare_msg_handler(key=key)
+                reply, attachment = msg_handler.make_reply()
+                return reply, attachment
 
         self.AWAITING_REPLY = 0
         resolved_query = self.resolve_query()
 
-        msg_handler = self.prepare_message_handler(results=resolved_query)
-        reply = msg_handler.make_reply()
-        return reply
+        msg_handler = self.prepare_msg_handler(results=resolved_query)
+        reply, attachment = msg_handler.make_reply()
+        return reply, attachment
 
-    def prepare_message_handler(self, results=None, key=None):
+    def prepare_msg_handler(self, results=None, key=None):
         """Create and return a MessageHandler with query results"""
 
         if not results:
@@ -84,6 +84,7 @@ class BaseQueryHandler(object):
 
         message_data = {'msg_num': self.AWAITING_REPLY,
                         'results': results,
+                        'results_data': self.results_data,
                         'query': self.query_data.get(key)}
 
         msg_handler = self.msg_handler(**message_data)

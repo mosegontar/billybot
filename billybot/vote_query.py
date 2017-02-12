@@ -42,10 +42,8 @@ class VoteQuery(BaseQueryHandler):
         else:
             vote_query = existing_query_object
             vote_query.narrow_parameters(message)
-
-        reply = vote_query.get_reply()
-
-        return vote_query, reply
+        reply, attachment = vote_query.get_reply()
+        return vote_query, reply, attachment
 
     def parse_query(self):
         """Break up query string and set instance variables"""
@@ -55,7 +53,6 @@ class VoteQuery(BaseQueryHandler):
             return errors
 
         _member, _bill = self.query_data['original_query'].split('bill:')
-        print(_member)
         self.query_data['member'] = _member.replace('member:', '').strip()
         self.query_data['bill_votes'] = _bill.strip()
 

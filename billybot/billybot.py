@@ -1,7 +1,7 @@
 import os
 import time
-
-from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
+import json
+from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT, slack_attachment
 from .vote_query import VoteQuery
 
 
@@ -18,13 +18,12 @@ class MessageTriage(object):
         Return QueryHandler object and reply for user.
         """
         if self.query_object and self.query_object.AWAITING_REPLY:
-            query, reply = self.query_object.run_query(self.message, self.query_object)
-            return query, reply
+            query, reply, attachment = self.query_object.run_query(self.message, self.query_object)
+            return query, reply, attachment
 
         if self.message.startswith('vote'):
-            query, reply = VoteQuery.run_query(self.message)
-            return query, reply
-
+            query, reply, attachment = VoteQuery.run_query(self.message)
+            return query, reply, attachment
         return None, "I'm sorry, I'm afraid I can't do that. "
 
 
@@ -39,21 +38,22 @@ class BillyBot(object):
         active_query = self.active_queries.get(user_id)
 
         triage = MessageTriage(command, active_query)
-        query, reply = triage.identify_query()
+        query, reply, attachments = triage.identify_query()
 
         self.active_queries[user_id] = query
 
-        self.send_message(username, reply, channel)
+        self.send_message(username, reply, attachments, channel)
 
-    def send_message(self, username, message, channel):
+    def send_message(self, username, reply, attachments, channel):
         """Send message back to user via slack api call."""
 
         SLACK_CLIENT.api_call("chat.postMessage",
                               channel=channel,
-                              text=message,
+                              text=reply,
                               as_user=True,
                               unfurl_media=False,
-                              unfurl_links=False)
+                              unfurl_links=False,
+                              attachments=attachments)
 
     def parse_slack_output(self, stream_output):
         """
