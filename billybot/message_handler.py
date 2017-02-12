@@ -20,11 +20,14 @@ class MessageHandler(object):
 
     def make_reply(self):
         """Return full reply to user query."""
+
         results = self.results
         if type(results) == list:
+            reply = self.message
             results = self.create_attachment()
+        else:
+            reply = self.message + ' ' + self.results
 
-        reply = self.message
         return reply, results
 
     def create_attachment(self, **kwargs):
@@ -32,7 +35,6 @@ class MessageHandler(object):
         for key, value in stuff.items():
             if key in self.attachment.keys():
                 self.attachment[key] = value
-                print(self.attachment)
 
         return json.dumps([self.attachment])
 
