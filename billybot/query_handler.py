@@ -6,7 +6,7 @@ class BaseQueryHandler(object):
     def __init__(self, command, query):
 
         self.query_data = dict()
-        self.query_data['original_query'] = query.split(command)[1].strip()
+        self.query_data['original_query'] = query
 
         self.required_parameters = []
         self.search_parameters = OrderedDict()

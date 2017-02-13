@@ -23,7 +23,7 @@ class TestVoteQuery(unittest.TestCase):
         vote_query, reply, attachment = VoteQuery.run_query(message)
         self.assertIn('member: Warren bill: S.Con.Res.3', repr(vote_query))
         self.assertIn('s26-2017', attachment)
-        self.assertIn('I found multiple matches', reply)
+        self.assertIn("I found multiple matches", reply)
 
     def test_query_setup(self):
         self.assertFalse(self.errors)
@@ -105,7 +105,7 @@ class TestVoteQuery(unittest.TestCase):
         vote_query.set_roll_vote_data('s26-2017')
 
         roll_id = vote_query.results_data['roll_id']
-        expected_roll_id = 's26-2017'
+        expected_roll_id = "s26-2017"
         self.assertEqual(roll_id, expected_roll_id)
         roll_question = vote_query.results_data['roll_question']
         expected_question = "On the Concurrent Resolution S.Con.Res. 3"

@@ -1,30 +1,40 @@
-import os
 import time
-import json
-from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT, slack_attachment
+
+from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
 from .vote_query import VoteQuery
 
 
 class MessageTriage(object):
 
-    def __init__(self, message, query_object=None):
+    def __init__(self, message, query_handler=None):
 
         self.message = message
-        self.query_object = query_object
+        self.query_handler = query_handler
+        self.command_queries = {'vote': VoteQuery}
 
-    def identify_query(self):
-        """Send message to proper QueryHandler object.
+    def process_query(self):
+        """Run query and return query handler, reply, and attachment."""
 
-        Return QueryHandler object and reply for user.
-        """
-        if self.query_object and self.query_object.AWAITING_REPLY:
-            query, reply, attachment = self.query_object.run_query(self.message, self.query_object)
-            return query, reply, attachment
+        if self.query_handler and self.query_handler.AWAITING_REPLY:
+            message = self.message
+            query_handler = self.query_handler
+        else:
+            command, message = self.prepare_query()
+            query_handler = self.command_queries.get(command)
 
-        if self.message.startswith('vote'):
-            query, reply, attachment = VoteQuery.run_query(self.message)
-            return query, reply, attachment
-        return None, "I'm sorry, I'm afraid I can't do that. "
+        result = query_handler.run_query(message, self.query_handler)
+        handler, reply, attachment = result
+
+        return handler, reply, attachment
+
+    def prepare_query(self):
+        """Identify which query handler to use based on user's command."""
+
+        words_in_msg = self.message.split()
+        command = words_in_msg[0].strip()
+        message = ' '.join(words_in_msg[1:]).strip()
+
+        return command, message
 
 
 class BillyBot(object):
@@ -33,14 +43,14 @@ class BillyBot(object):
         self.active_queries = dict()
 
     def handle_command(self, user_id, username, command, channel):
-        """Triage message and prepare reply to use."""
+        """Triage message and prepare reply to send."""
 
         active_query = self.active_queries.get(user_id)
 
         triage = MessageTriage(command, active_query)
-        query, reply, attachments = triage.identify_query()
+        query_handler, reply, attachments = triage.process_query()
 
-        self.active_queries[user_id] = query
+        self.active_queries[user_id] = query_handler
 
         self.send_message(username, reply, attachments, channel)
 

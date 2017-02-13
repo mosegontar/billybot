@@ -143,7 +143,7 @@ class VoteQuery(BaseQueryHandler):
             return "{} didn't vote on {}".format(self.results_data['member_name'],
                                                  self.query_data['bill_votes'])
 
-        return '{} voted {} on {}.'.format(self.results_data['member_name'],
+        return "{} voted {} on {}.".format(self.results_data['member_name'],
                                            vote,
                                            self.search_parameters['bill_votes'])
 
