@@ -78,7 +78,6 @@ class MemberParser(Parser):
 
     @classmethod
     def formalize_name(cls, member_bio):
-        print(member_bio, 'hi')
         _full_name = ' '.join([member_bio['first_name'],
                               member_bio['last_name']])
 

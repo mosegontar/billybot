@@ -28,8 +28,9 @@ class ContactQuery(BaseQueryHandler):
     def run_query(message, existing_query_handler=None):
         """Get and return query object and reply for user"""
 
-        # create a VoteQuery object if none exists
+        # create a query handler if none exists
         if not existing_query_handler:
+
             errors, resp = ContactQuery.query_setup(message)
             if errors:
                 return None, resp
@@ -38,7 +39,7 @@ class ContactQuery(BaseQueryHandler):
         else:
             contact_query = existing_query_handler
             contact_query.narrow_parameters(message)
-        print(contact_query.search_parameters)
+
         reply, attachment = contact_query.get_reply()
         return contact_query, reply, attachment
 
@@ -79,7 +80,7 @@ class ContactQuery(BaseQueryHandler):
             if not found_members:
                 no_results_found.append(self.query_data['member'])
             else:
-                self.search_parameters = found_members
+                self.search_parameters['member'] = found_members
 
         return no_results_found
 
@@ -89,7 +90,12 @@ class ContactQuery(BaseQueryHandler):
             bioguide_id = self.search_parameters['member'][0][1]
             self.search_parameters['member'] = bioguide_id
 
+    def resolve_query(self):
 
+        member = MemberParser(self.search_parameters['member'])
+
+        print("FIRSTNAME: ", member.member_data['first_name'])
+        return member.member_data['first_name']
 
 
 

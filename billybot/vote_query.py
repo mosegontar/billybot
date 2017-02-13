@@ -87,7 +87,7 @@ class VoteQuery(BaseQueryHandler):
         return no_results_found
 
     def finalize_params(self, key):
-        """Set search_parameters their proper ID strings
+        """Set search_parameters their poper ID strings
 
         Each congress member has a 'bioguide_id' and
         each congressional bill has associated with it a number of 'roll_id'
