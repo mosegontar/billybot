@@ -105,7 +105,7 @@ class MemberParser(Parser):
         if data:
             found_members = [cls.summarize_bio(bio) for bio in data]
         else:
-            found_members = data
+            return None
 
         return found_members
 

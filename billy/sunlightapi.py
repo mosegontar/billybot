@@ -13,8 +13,6 @@ class SunlightAPI(object):
         self.domain = SunlightAPI.DOMAIN
         self.congress = str(sunlight.congress.upcoming_bills()[0]['congress'])
 
-
-
     @staticmethod
     def get_results(data):
         return json.loads(data)['results']
@@ -36,6 +34,12 @@ class SunlightAPI(object):
     def get_vote_data(self, roll_id):
         return sunlight.congress.votes(roll_id=roll_id)
 
+    def get_all_bill_votes(self, bill_id):
+        paging_congress = PagingService(sunlight.congress)
+        return paging_congress.votes(bill_id=bill_id, limit=100)
+
+    # The methods below don't use Python-Sunlight
+
     def get_roll_call_vote(self, roll_id, bioguide_id):
         url = self.domain + 'votes?roll_id={}&fields=voters.{}.vote'.format(roll_id,
                                                                             bioguide_id)
@@ -47,7 +51,4 @@ class SunlightAPI(object):
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
 
-    def get_all_bill_votes(self, bill_id):
-        paging_congress = PagingService(sunlight.congress)
-        return paging_congress.votes(bill_id=bill_id, limit=100)
 

@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 class BaseQueryHandler(object):
 
-    def __init__(self, command, query):
+    def __init__(self, query):
 
         self.query_data = dict()
         self.query_data['original_query'] = query
@@ -16,6 +16,7 @@ class BaseQueryHandler(object):
 
         self.AWAITING_REPLY = 0
         self.ERROR = None
+
 
     def validate_query(self):
         """Check that required parameters are in query."""

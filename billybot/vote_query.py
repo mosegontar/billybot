@@ -6,7 +6,7 @@ from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 class VoteQuery(BaseQueryHandler):
 
     def __init__(self, query):
-        super().__init__('vote', query)
+        super().__init__(query)
 
         self.search_parameters['member'] = None
         self.search_parameters['bill_votes'] = None
@@ -29,18 +29,18 @@ class VoteQuery(BaseQueryHandler):
         return False, vote_query
 
     @staticmethod
-    def run_query(message, existing_query_object=None):
+    def run_query(message, existing_query_handler=None):
         """Get and return query object and reply for user"""
 
         # create a VoteQuery object if none exists
-        if not existing_query_object:
+        if not existing_query_handler:
             errors, resp = VoteQuery.query_setup(message)
             if errors:
                 return None, resp
             else:
                 vote_query = resp
         else:
-            vote_query = existing_query_object
+            vote_query = existing_query_handler
             vote_query.narrow_parameters(message)
         reply, attachment = vote_query.get_reply()
         return vote_query, reply, attachment
