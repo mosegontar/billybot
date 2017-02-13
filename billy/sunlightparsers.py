@@ -1,7 +1,22 @@
 from billy.sunlightapi import SunlightAPI
 
 
-class BillParser(SunlightAPI):
+class Parser(SunlightAPI):
+
+    MEMBERS_OF_CONGRESS = SunlightAPI.get_all_members_of_congress()
+
+    @classmethod
+    def lookup_members(cls, keys):
+
+        key_words = keys.split()
+        matches = []
+        for member in cls.MEMBERS_OF_CONGRESS:
+            if all([k in member.values() for k in key_words]):
+                matches.append(member)
+        return matches
+
+
+class BillParser(Parser):
 
     def __init__(self, bill_id, congress=None):
         super().__init__()
@@ -12,11 +27,7 @@ class BillParser(SunlightAPI):
         self.bill_id = bill_id
         self.sanitize_bill_id()
 
-        bill_data = self.get_bill_data(self.bill_id)
-        if bill_data:
-            self.bill_data = bill_data[0]
-        else:
-            self.bill_data = None
+        self.bill_data = self.get_bill_data(self.bill_id)
 
         self._votes = None
 
@@ -57,17 +68,17 @@ class BillParser(SunlightAPI):
         return vote_data
 
 
-class MemberParser(SunlightAPI):
+class MemberParser(Parser):
 
     def __init__(self, bioguide_id):
         super().__init__()
         self.bioguide_id = bioguide_id
-        self.member_data = self.get_member_data(self.bioguide_id)[0]
+        self.member_data = self.get_member_data(self.bioguide_id)
         self._recent_votes = None
 
     @classmethod
     def formalize_name(cls, member_bio):
-
+        print(member_bio, 'hi')
         _full_name = ' '.join([member_bio['first_name'],
                               member_bio['last_name']])
 
@@ -89,9 +100,13 @@ class MemberParser(SunlightAPI):
     def find_members(cls, query):
         """Return dictionary dict of legislator matches"""
 
-        data = MemberParser.search_legislators(query)
+        data = cls.lookup_members(query)
 
-        found_members = [cls.summarize_bio(bio) for bio in data]
+        if data:
+            found_members = [cls.summarize_bio(bio) for bio in data]
+        else:
+            found_members = data
+
         return found_members
 
     @property

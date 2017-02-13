@@ -1,6 +1,9 @@
 import json
 import requests
 
+import sunlight
+from sunlight.pagination import PagingService
+
 class SunlightAPI(object):
     """https://sunlightlabs.github.io/congress/"""
 
@@ -8,32 +11,30 @@ class SunlightAPI(object):
 
     def __init__(self):
         self.domain = SunlightAPI.DOMAIN
-        self.congress = str(SunlightAPI.get_results(self.get_current_congress())[0]['congress'])
+        self.congress = str(sunlight.congress.upcoming_bills()[0]['congress'])
+
+
 
     @staticmethod
     def get_results(data):
         return json.loads(data)['results']
 
-    def get_current_congress(self):
-        url = self.domain + 'bills'
-        resp = requests.get(url)
-        return resp.text
+    @staticmethod
+    def get_all_members_of_congress():
+        return sunlight.congress.all_legislators_in_office()
 
     @classmethod
-    def search_legislators(cls, last_name, first_name='', party='', chamber=''):
-        query = 'legislators?'\
-                'last_name={}&first_name={}&party={}&chamber={}'.format(last_name,
-                                                                        first_name,
-                                                                        party,
-                                                                        chamber)
-        url = cls.DOMAIN + query
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
+    def search_legislators(cls, **kwargs):
+        return sunlight.congress.legislators(**kwargs)
 
     def get_member_data(self, bioguide_id):
-        url = self.domain + 'legislators?bioguide_id={}'.format(bioguide_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
+        return sunlight.congress.legislator(bioguide_id)
+
+    def get_bill_data(self, bill_id):
+        return sunlight.congress.bill(bill_id=bill_id)
+
+    def get_vote_data(self, roll_id):
+        return sunlight.congress.votes(roll_id=roll_id)
 
     def get_roll_call_vote(self, roll_id, bioguide_id):
         url = self.domain + 'votes?roll_id={}&fields=voters.{}.vote'.format(roll_id,
@@ -46,17 +47,7 @@ class SunlightAPI(object):
         resp = requests.get(url)
         return SunlightAPI.get_results(resp.text)
 
-    def get_bill_data(self, bill_id):
-        url = self.domain + 'bills?bill_id={}'.format(bill_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
-
     def get_all_bill_votes(self, bill_id):
-        url = self.domain + 'votes?bill_id={}&per_page=50'.format(bill_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)
+        paging_congress = PagingService(sunlight.congress)
+        return paging_congress.votes(bill_id=bill_id, limit=100)
 
-    def get_vote_data(self, roll_id):
-        url = self.domain + 'votes?roll_id={}'.format(roll_id)
-        resp = requests.get(url)
-        return SunlightAPI.get_results(resp.text)

@@ -15,14 +15,14 @@ class TestVoteQuery(unittest.TestCase):
         return msg
 
     def setUp(self):
-        message = "vote member: Warren bill: S.Con.Res.3"
+        message = "member: Warren bill: S.Con.Res.3"
         self.errors, self.resp = VoteQuery.query_setup(message)
 
     def test_run_query(self):
-        message = "vote member: Warren bill: S.Con.Res.3"
+        print ("HEYIEROIEROI")
+        message = "member: Warren bill: S.Con.Res.3"
         vote_query, reply, attachment = VoteQuery.run_query(message)
         self.assertIn('member: Warren bill: S.Con.Res.3', repr(vote_query))
-        self.assertIn('s26-2017', attachment)
         self.assertIn("I found multiple matches", reply)
 
     def test_query_setup(self):
@@ -30,13 +30,13 @@ class TestVoteQuery(unittest.TestCase):
         self.assertIn("member: Warren bill: S.Con.Res.3", repr(self.resp))
 
     def test_query_errors(self):
-        message = "vote member: Gontar bill: S.Con.Res.3"
+        message = "member: Gontar bill: S.Con.Res.3"
         self.errors, self.resp = VoteQuery.query_setup(message)
         self.assertTrue(self.errors)
         expected_resp = self.get_message(0, "'Gontar'")
         self.assertEqual(self.resp, expected_resp)
 
-        message = "vote Gontar bill: S.Con.Res.3"
+        message = "Gontar bill: S.Con.Res.3"
         self.errors, self.resp = VoteQuery.query_setup(message)
         expected_resp = self.get_message(1)
         self.assertEqual(self.resp, expected_resp)
@@ -49,7 +49,7 @@ class TestVoteQuery(unittest.TestCase):
     def test_initialize_params(self):
         vote_query = self.resp
         self.assertFalse(vote_query.initialize_params())
-        message = "vote member: Gontar bill: S.Con.Res.3"
+        message = "member: Gontar bill: S.Con.Res.3"
         vote_query = VoteQuery(message)
         vote_query.query_data['member'] = 'Gontar'
         vote_query.query_data['bill_votes'] = 'S.Con.Res.3'
