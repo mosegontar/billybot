@@ -3,6 +3,29 @@ from .query_handler import BaseQueryHandler
 from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 
 
+class MemberQuery(object):
+
+    def __init__(self, search_terms):
+
+        self.query_results = MemberParser.find_members(search_terms)
+
+    def get_member(self, keywords):
+
+        matches = []
+        for member in self.query_results:
+            if all([k in member[0] for k in keywords]):
+                matches.append(member)
+
+        self.query_results = matches
+
+    def validate_results(self):
+
+        if not self.query_results:
+            return False
+        if self.query_results
+
+
+
 class VoteQuery(BaseQueryHandler):
 
     def __init__(self, query):
