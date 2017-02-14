@@ -5,7 +5,9 @@ from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 
 class QueryHandler(object):
 
-    def __init__(self):
+    def __init__(self, *args):
+
+        self.requested_data = args
         self.query_results = None
         self.AWAITING_REPLY = 0
 
@@ -14,7 +16,7 @@ class QueryHandler(object):
         keywords = keywords.split()
         matches = []
         for match in self.query_results:
-            if all([k in match[0] for k in keywords]):
+            if all([k in match[1].values() for k in keywords]):
                 matches.append(match)
 
         return matches
@@ -33,11 +35,11 @@ class QueryHandler(object):
 
 class MemberQuery(QueryHandler):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args):
+        super().__init__(*args)
 
         self.member_summary = None
-        self.member_id = None
+        self.bioguide_id = None
         self.member_data = None
 
     def run_query(self, incoming_msg):
@@ -58,10 +60,16 @@ class MemberQuery(QueryHandler):
             # prepare msg
             self.AWAITING_REPLY += 1
 
-    def resolve_query(self):
+        if found:
+            self.AWAITING_REPLY = 0
+            self.member_summary = self.query_results[0][0]
+            self.member_data = self.query_results[0][1]
+            self.package_message()
 
-        found_member = self.query_results[0]
-        self.member_summary, self.member_id = found_member
+    def package_message(self):
+
+        for item in self.requested_data:
+            print(self.member_data[item])
 
 
 

@@ -76,9 +76,6 @@ class MemberParser(Parser):
         self.member_data = self.get_member_data(self.bioguide_id)
         self._recent_votes = None
 
-    def get_member_bio(self):
-        return self.
-
     @classmethod
     def formalize_name(cls, member_bio):
         _full_name = ' '.join([member_bio['first_name'],
@@ -96,7 +93,7 @@ class MemberParser(Parser):
 
         member_summary = cls.formalize_name(bio)
 
-        return (member_summary, bio['bioguide_id'])
+        return (member_summary, bio) #bio['bioguide_id'])
 
     @classmethod
     def find_members(cls, query):
