@@ -1,93 +1,113 @@
-from collections import OrderedDict
+from billy.sunlightparsers import MemberParser, BillParser
+from .query_handler import BaseQueryHandler
+from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 
 
 class BaseQueryHandler(object):
 
-    def __init__(self, query):
+    def __init__(self, *args):
 
-        self.query_data = dict()
-        self.query_data['original_query'] = query
+        self.requested_data = args
+        self.query_results = None
+        self.PENDING = 1
 
-        self.required_parameters = []
-        self.search_parameters = OrderedDict()
+    def run_query(self, incoming_msg):
+        """Run query and look for single match."""
 
-        self.msg_handler = None
-        self.results_data = dict()
+        if not self.query_results:
+            self._initialize_results(incoming_msg)
+        else:
+            self.query_results = self._narrow_results(incoming_msg)
 
-        self.AWAITING_REPLY = 0
-        self.ERROR = None
+        valid, found = self._validate_results()
+
+        if not valid:
+            self.PENDING = 0
+            # prepare error
+            pass
+
+        if not found:
+            # prepare msg
+            self.PENDING += 1
+
+        if found:
+            self.PENDING = 0
+            self._extract_results()
+            self._package_message()
+
+    def _narrow_results(self, keywords):
+        """Narrow query_results down based on matching keywords."""
+
+        keywords = keywords.split()
+        matches = []
+        for match in self.query_results:
+            if all([k in match[1].values() for k in keywords]):
+                matches.append(match)
+
+        return matches
+
+    def _validate_results(self):
+        """Validate whether results exist and that requested item found."""
+
+        if not self.query_results:
+            valid, found = False, False
+        elif len(self.query_results) == 1:
+            valid, found = True, True
+        else:
+            valid, found = True, False
+
+        return valid, found
 
 
-    def validate_query(self):
-        """Check that required parameters are in query."""
+class MemberQuery(BaseQueryHandler):
 
-        errors = []
-        for param in self.required_parameters:
-            if param not in self.query_data['original_query']:
-                self.ERROR = 'BAD_QUERY'
-                errors.append(param)
+    def __init__(self, *args):
+        super().__init__(*args)
 
-        return errors
+        self.member_summary = None
+        self.bioguide_id = None
+        self.member_data = None
 
-    def select(self, keys, item_list):
-        """Select items from item_list that contain all keys"""
+    def _initialize_results(self, incoming_msg):
+        """Initialize query results with call to Sunlight API."""
 
-        if type(keys) == str:
-            keys = keys.split()
+        self.query_results = MemberParser.find_members(incoming_msg)
 
-        if len(keys) == 1:
-            try:
-                return [item_list[int(keys[0])-1]]
-            except:
-                pass
+    def _extract_results(self):
+        """Set instance variables with member summary and full member data."""
 
-        # itm[0] contains the data with which user is making selection
-        results = [itm for itm in item_list if all([k in itm[0] for k in keys])]
+        self.member_summary = self.query_results[0][0]
+        self.member_data = self.query_results[0][1]
 
-        return results
+    def _package_message(self):
+        """Package message and return reply and attachments."""
 
-    def narrow_parameters(self, message):
-        """Narrow down list of data based on words in message"""
+        for item in self.requested_data:
+            print(self.member_data[item])
 
-        if self.AWAITING_REPLY:
-            for key, val in self.search_parameters.items():
-                if type(val) == list:
-                    self.search_parameters[key] = self.select(message, val)
-                    break
 
-    def get_reply(self):
-        """Returns reply based on state"""
+class ContactQuery(BaseQueryHandler):
 
-        for key, value in self.search_parameters.items():
-            if type(value) == str:
-                pass
-            elif len(value) == 1:
-                self.AWAITING_REPLY = 0
-                self.finalize_params(key)
-            else:
-                self.AWAITING_REPLY += 1
-                msg_handler = self.prepare_msg_handler(key=key)
-                reply, attachment = msg_handler.make_reply()
-                return reply, attachment
+    def __init__(self):
 
-        self.AWAITING_REPLY = 0
-        resolved_query = self.resolve_query()
+        self.member = MemberQuery('first_name', 
+                                  'last_name', 
+                                  'website',
+                                  'phone',
+                                  'twitter_id')
+        self.PENDING = 1
 
-        msg_handler = self.prepare_msg_handler(results=resolved_query)
-        reply, attachment = msg_handler.make_reply()
-        return reply, attachment
+    def run_query(self, incoming_msg):
+        """Run member.run_query if a member query is pending."""
+        
+        if self.PENDING:
+            self.member.run_query(incoming_msg)
+            self.PENDING = self.member.PENDING
 
-    def prepare_msg_handler(self, results=None, key=None):
-        """Create and return a MessageHandler with query results"""
 
-        if not results:
-            results = [itm[0] for itm in self.search_parameters[key]]
 
-        message_data = {'msg_num': self.AWAITING_REPLY,
-                        'results': results,
-                        'results_data': self.results_data,
-                        'query': self.query_data.get(key)}
 
-        msg_handler = self.msg_handler(**message_data)
 
-        return msg_handler
+
+
+

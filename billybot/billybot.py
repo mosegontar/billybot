@@ -1,7 +1,7 @@
 import time
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
-from .vote_query import VoteQuery
+from .vote_query import ContactQuery
 
 
 class MessageTriage(object):
@@ -10,22 +10,24 @@ class MessageTriage(object):
 
         self.message = message
         self.query_handler = query_handler
-        self.command_queries = {'vote': VoteQuery}
+        self.command_queries = {'vote': None,
+                                'contact': ContactQuery}
 
     def process_query(self):
         """Run query and return query handler, reply, and attachment."""
 
-        if self.query_handler and self.query_handler.AWAITING_REPLY:
+        if self.query_handler and self.query_handler.PENDING:
             message = self.message
             query_handler = self.query_handler
         else:
             command, message = self.prepare_query()
-            query_handler = self.command_queries.get(command)
+            handler_instance = self.command_queries.get(command)
+            query_handler = handler_instance()
 
-        result = query_handler.run_query(message, self.query_handler)
-        handler, reply, attachment = result
+        result = query_handler.run_query(message)
+        #handler, reply, attachment = result
 
-        return handler, reply, attachment
+        return query_handler, result
 
     def prepare_query(self):
         """Identify which query handler to use based on user's command."""
