@@ -3,26 +3,82 @@ from .query_handler import BaseQueryHandler
 from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
 
 
-class MemberQuery(object):
+class QueryHandler(object):
 
-    def __init__(self, search_terms):
+    def __init__(self):
+        self.query_results = None
+        self.AWAITING_REPLY = 0
 
-        self.query_results = MemberParser.find_members(search_terms)
+    def narrow_results(self, keywords):
 
-    def get_member(self, keywords):
-
+        keywords = keywords.split()
         matches = []
-        for member in self.query_results:
-            if all([k in member[0] for k in keywords]):
-                matches.append(member)
+        for match in self.query_results:
+            if all([k in match[0] for k in keywords]):
+                matches.append(match)
 
-        self.query_results = matches
+        return matches
 
     def validate_results(self):
 
         if not self.query_results:
-            return False
-        if self.query_results
+            valid, found = False, False
+        elif len(self.query_results) == 1:
+            valid, found = True, True
+        else:
+            valid, found = True, False
+
+        return valid, found
+
+
+class MemberQuery(QueryHandler):
+
+    def __init__(self):
+        super().__init__()
+
+        self.member_summary = None
+        self.member_id = None
+        self.member_data = None
+
+    def run_query(self, incoming_msg):
+
+        if not self.query_results:
+            self.query_results = MemberParser.find_members(incoming_msg)
+        else:
+            self.query_results = self.narrow_results(incoming_msg)
+
+
+        valid, found = self.validate_results()
+
+        if not valid:
+            # return error msg
+            pass
+
+        if not found:
+            # prepare msg
+            self.AWAITING_REPLY += 1
+
+    def resolve_query(self):
+
+        found_member = self.query_results[0]
+        self.member_summary, self.member_id = found_member
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
