@@ -59,7 +59,7 @@ class BaseQueryHandler(object):
         return valid, found
 
 
-class MemberQuery(BaseQueryHandler):
+class MemberQueryHandler(BaseQueryHandler):
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -85,16 +85,25 @@ class MemberQuery(BaseQueryHandler):
         for item in self.requested_data:
             print(self.member_data[item])
 
+class BillQueryHandler(BaseQueryHandler):
 
-class ContactQuery(BaseQueryHandler):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.bill_title = None
+        self.bill_id = None
+        self.bill_data = None
+
+
+class ContactQuery(object):
 
     def __init__(self):
 
-        self.member = MemberQuery('first_name', 
-                                  'last_name', 
-                                  'website',
-                                  'phone',
-                                  'twitter_id')
+        self.member = MemberQueryHandler('first_name', 
+                                         'last_name', 
+                                         'website',
+                                         'phone',
+                                         'twitter_id')
         self.PENDING = 1
 
     def run_query(self, incoming_msg):
@@ -106,6 +115,7 @@ class ContactQuery(BaseQueryHandler):
 
 
 
+class BillQuery(object):
 
 
 

@@ -17,15 +17,18 @@ class MessageTriage(object):
         """Run query and return query handler, reply, and attachment."""
 
         if self.query_handler and self.query_handler.PENDING:
+        
             message = self.message
             query_handler = self.query_handler
+        
         else:
+        
             command, message = self.prepare_query()
-            handler_instance = self.command_queries.get(command)
-            query_handler = handler_instance()
+
+            QueryHandlerInstance = self.command_queries.get(command)
+            query_handler = QueryHandlerInstance()
 
         result = query_handler.run_query(message)
-        #handler, reply, attachment = result
 
         return query_handler, result
 
