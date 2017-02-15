@@ -39,12 +39,14 @@ class BaseQueryHandler(object):
 
         keywords = keywords.split()
 
+        # if user entered a number corresponding to the results list order
         if len(keywords) == 1:
             try:
                 return [self.query_results[int(keywords[0])-1]]
             except:
                 pass
 
+        # find matches based on entered keywords
         matches = []
         for match in self.query_results:
             if all([k in match[1].values() for k in keywords]):
@@ -77,7 +79,9 @@ class MemberQuery(BaseQueryHandler):
 
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
+
         zip_in_msg = re.search(r'\d{5}', incoming_msg)
+        
         if zip_in_msg:
             zipcode = zip_in_msg.group()
         else:
