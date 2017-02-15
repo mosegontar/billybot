@@ -1,4 +1,5 @@
 import json
+import copy
 from .config import slack_attachment
 
 from eng_join import join
@@ -12,7 +13,8 @@ class MessageHandler(object):
         self.incoming_data = kwargs
 
     def format_attachment(self, attachment):
-        attachment = attachment
+
+
         for key, value in self.incoming_data.items():
             if key in attachment.keys():
                 if key == 'text' and type(value) == list:
@@ -29,7 +31,7 @@ class MessageHandler(object):
         return string_list
 
     def make_reply(self):
-        self.format_attachment(slack_attachment)
+        self.format_attachment(copy.deepcopy(slack_attachment))
         reply = [{'text': self.primary_msg,
                   'attachments': self.attachment}]
 
@@ -44,8 +46,7 @@ class MessageHandler(object):
 
 
 
-
-
+"""
 
 
 
@@ -66,3 +67,4 @@ slack_attachment = {
 
 
 
+"""

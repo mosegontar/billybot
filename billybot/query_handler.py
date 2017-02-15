@@ -38,6 +38,13 @@ class BaseQueryHandler(object):
         """Narrow query_results down based on matching keywords."""
 
         keywords = keywords.split()
+
+        if len(keywords) == 1:
+            try:
+                return [self.query_results[int(keywords[0])-1]]
+            except:
+                pass
+
         matches = []
         for match in self.query_results:
             if all([k in match[1].values() for k in keywords]):
@@ -61,6 +68,7 @@ class BaseQueryHandler(object):
 class MemberQuery(BaseQueryHandler):
 
     def __init__(self):
+        super().__init__()
 
         self.member_summary = None
         self.bioguide_id = None
@@ -72,6 +80,8 @@ class MemberQuery(BaseQueryHandler):
         zip_in_msg = re.search(r'\d{5}', incoming_msg)
         if zip_in_msg:
             zipcode = zip_in_msg.group()
+        else:
+            zipcode = None
         
         self.query_results = MemberParser.find_members(incoming_msg, zipcode)
 
@@ -81,32 +91,17 @@ class MemberQuery(BaseQueryHandler):
         self.member_summary = self.query_results[0][0]
         self.member_data = self.query_results[0][1]
 
-    def _package_message(self, query):
-        """Package message and return reply and attachments."""
-
-        if self.PENDING:
-            data = {'title': "Results for '{}'".format(query),
-                    'title_link': None,
-                    'fields': [],
-                    'text': [item[0] for item in self.query_results]}
-
-            primary = "I'm finding multiple matches for '{}'".format(query)
-            secondary = "Which one would you like to view?"
-        else:
-
-
-            primary = "Here you go!"
-            secondary = None
-
-        msg_handler = MessageHandler(primary, secondary, **data)
-        reply = msg_handler.make_reply()
-
-        return reply
 
 
 class ContactQuery(MemberQuery):
 
-                data = {'title': self.member_summary,
+    def _package_message(self, query):
+        """Package message and return reply and attachments."""
+
+        if not self.PENDING:
+            primary = 'Here you go :)'
+            secondary = 'Anything else I can do for you?'
+            data = {'title': self.member_summary,
                     'title_link': self.member_data['website'],
                     'fields': [{'title': 'Twitter',
                                 'value': 'twitter.com/{}'.format(self.member_data['twitter_id']),
@@ -115,6 +110,22 @@ class ContactQuery(MemberQuery):
                                 'value': self.member_data['phone'],
                                 'short': True}],
                     'text': 'Contact info'}
+
+        else:
+            primary = "I found multiple matches for '{}'".format(query)
+            secondary = "Which one did you mean?"
+            data = {'title': "Results for '{}'".format(query),
+                    'title_link': None,
+                    'fields': [],
+                    'text': [item[0] for item in self.query_results]}
+
+
+        msg_handler = MessageHandler(primary, secondary, **data)
+        reply = msg_handler.make_reply()
+        return reply
+
+
+
 
 
 
