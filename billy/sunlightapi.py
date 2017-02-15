@@ -25,6 +25,10 @@ class SunlightAPI(object):
     def search_legislators(cls, **kwargs):
         return sunlight.congress.legislators(**kwargs)
 
+    @classmethod
+    def search_legislators_by_zip(cls, zipcode):
+        return sunlight.congress.locate_legislators_by_zip(zipcode)
+
     def get_member_data(self, bioguide_id):
         return sunlight.congress.legislator(bioguide_id)
 

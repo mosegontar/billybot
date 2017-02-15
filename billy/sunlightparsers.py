@@ -77,6 +77,11 @@ class MemberParser(Parser):
         self._recent_votes = None
 
     @classmethod
+    def find_member_by_zip(cls, zipcode):
+        data = SunlightAPI.search_legislators_by_zip(zipcode)
+        return data
+
+    @classmethod
     def formalize_name(cls, member_bio):
         _full_name = ' '.join([member_bio['first_name'],
                               member_bio['last_name']])
@@ -96,10 +101,13 @@ class MemberParser(Parser):
         return (member_summary, bio) #bio['bioguide_id'])
 
     @classmethod
-    def find_members(cls, query):
+    def find_members(cls, query, zipcode=None):
         """Return dictionary dict of legislator matches"""
 
-        data = cls.lookup_members(query)
+        if zipcode:
+            data = cls.find_member_by_zip(zipcode)
+        else:
+            data = cls.lookup_members(query)
 
         if data:
             found_members = [cls.summarize_bio(bio) for bio in data]

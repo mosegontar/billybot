@@ -1,3 +1,4 @@
+import re
 import copy
 from billy.sunlightparsers import MemberParser, BillParser
 from .message_handler import MessageHandler
@@ -68,8 +69,11 @@ class MemberQuery(BaseQueryHandler):
 
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
-
-        self.query_results = MemberParser.find_members(incoming_msg)
+        zip_in_msg = re.search(r'\d{5}', incoming_msg)
+        if zip_in_msg:
+            zipcode = zip_in_msg.group()
+        
+        self.query_results = MemberParser.find_members(incoming_msg, zipcode)
 
     def _extract_results(self):
         """Set instance variables with member summary and full member data."""
