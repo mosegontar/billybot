@@ -41,30 +41,3 @@ class MessageHandler(object):
             reply.append(second)
 
         return reply
-
-
-
-
-
-"""
-
-
-
-slack_attachment = {
-    "fallback": None, # "Required plain-text summary of the attachment."
-    "color": None, # color hex value
-    "pretext": None, #"Optional text that appears above the attachment block"
-    "author_name": None ,
-    "author_link": None,
-    "title": None,
-    "fields": [],
-    "title_link": None,
-    "text": None, #"Optional text that appears within the attachment",
-    "footer": None,
-    "ts": 123456789
-}
-
-
-
-
-"""

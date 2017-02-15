@@ -15,7 +15,7 @@ READ_WEBSOCKET_DELAY = 1
 
 slack_attachment = {
     "fallback": None, # "Required plain-text summary of the attachment."
-    "color": None, # color hex value
+    "color": '#56A0D3', # color hex value
     "pretext": None, #"Optional text that appears above the attachment block"
     "author_name": None ,
     "author_link": None,
