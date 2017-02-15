@@ -1,6 +1,6 @@
 import re
 import copy
-from billy.sunlightparsers import MemberParser, BillParser
+from billy.sunlightparsers import MemberParser
 from .message_handler import MessageHandler
 
 
@@ -80,12 +80,12 @@ class MemberQuery(BaseQueryHandler):
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
 
+        zipcode = None        
+
         zip_in_msg = re.search(r'\d{5}', incoming_msg)
-        
         if zip_in_msg:
             zipcode = zip_in_msg.group()
-        else:
-            zipcode = None
+            incoming_msg = incoming_msg.replace(zipcode, '')
         
         self.query_results = MemberParser.find_members(incoming_msg, zipcode)
 
@@ -103,8 +103,8 @@ class ContactQuery(MemberQuery):
         """Package message and return reply and attachments."""
 
         if not self.PENDING:
-            primary = 'Here you go :)'
-            secondary = 'Anything else I can do for you?'
+            primary = "Here you go :) Let me know if there is anything else I can do for you."
+            secondary = None
             data = {'title': self.member_summary,
                     'title_link': self.member_data['website'],
                     'fields': [{'title': 'Twitter',

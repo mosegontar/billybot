@@ -6,67 +6,16 @@ class Parser(SunlightAPI):
     MEMBERS_OF_CONGRESS = SunlightAPI.get_all_members_of_congress()
 
     @classmethod
-    def lookup_members(cls, keys):
+    def lookup_members(cls, keys, items=None):
 
+        if not items:
+            items = cls.MEMBERS_OF_CONGRESS
         key_words = keys.split()
         matches = []
-        for member in cls.MEMBERS_OF_CONGRESS:
+        for member in items:
             if all([k in member.values() for k in key_words]):
                 matches.append(member)
         return matches
-
-
-class BillParser(Parser):
-
-    def __init__(self, bill_id, congress=None):
-        super().__init__()
-
-        if congress:
-            self.congress = congress
-
-        self.bill_id = bill_id
-        self.sanitize_bill_id()
-
-        self.bill_data = self.get_bill_data(self.bill_id)
-
-        self._votes = None
-
-    def sanitize_bill_id(self):
-        """Format bill_id.
-
-        E.g.: "S. Con.Res.3." => 'sconres3-115'.
-        """
-
-        if not self.bill_id.endswith('-'+self.congress):
-            self.bill_id += '-' + self.congress
-
-        self.bill_id = self.bill_id.lower().replace(' ', '').replace('.', '')
-
-    def summarize_vote(self, vote):
-
-        date = vote['voted_at'].split('T')[0]
-
-        vote_summary = '{}: {} ({})'.format(vote['roll_id'],
-                                            vote['question'],
-                                            date)
-
-        return (vote_summary, vote['roll_id'])
-
-    @property
-    def votes(self):
-        """Return bill's associated votes. If set to None, makes api call."""
-
-        if not self._votes:
-            votes = self.get_all_bill_votes(self.bill_id)
-            self._votes = [self.summarize_vote(vote) for vote in votes]
-        return self._votes
-
-    @staticmethod
-    def get_roll_vote_data(roll_id):
-        api = SunlightAPI()
-        vote_data = api.get_vote_data(roll_id)[0]
-        return vote_data
-
 
 class MemberParser(Parser):
 
@@ -105,8 +54,10 @@ class MemberParser(Parser):
         """Return dictionary dict of legislator matches"""
 
         if zipcode:
-            data = cls.find_member_by_zip(zipcode)
-        else:
+            initial_data = cls.find_member_by_zip(zipcode)
+            data = cls.lookup_members(query, initial_data)
+        
+        if not zipcode:
             data = cls.lookup_members(query)
 
         if data:
