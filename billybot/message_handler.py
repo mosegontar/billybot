@@ -6,14 +6,24 @@ from eng_join import join
 
 class MessageHandler(object):
 
-    def __init__(self, primary_msg, secondary_msg, **kwargs):
-        self.primary_msg = primary_msg
-        self.secondary_msg = secondary_msg
-        self.attachment = None
+    message_dictionary = dict()
+    message_dictionary['NONE'] = ''
+    message_dictionary['RESOLVED'] = "Here you go :) Let me know if there is anything else I can do."
+    message_dictionary['RESULTS'] = "Okay, here's what I found:"
+    message_dictionary['CLARIFY'] = "Which one did you mean?"
+    message_dictionary['NO_RESULTS'] = "Ugh, I couldn't find anything :("
+    message_dictionary['GET_HELP'] = "Type 'help' to get help!"
+
+    def __init__(self, primary, secondary, **kwargs):
+        
+        self.primary_msg = MessageHandler.message_dictionary[primary]
+        self.secondary_msg = MessageHandler.message_dictionary[secondary]
         self.incoming_data = kwargs
 
-    def format_attachment(self, attachment):
+        self.attachment = None
 
+
+    def format_attachment(self, attachment):
 
         for key, value in self.incoming_data.items():
             if key in attachment.keys():
@@ -41,3 +51,17 @@ class MessageHandler(object):
             reply.append(second)
 
         return reply
+
+    @classmethod
+    def create_attachment_fields(cls, proposed_fields):
+
+        fields = []
+
+        for title, value in proposed_fields:
+            if value:
+                fields.append(dict([('title', title), 
+                                   ('value', value), 
+                                   ('short', True)]))
+
+        return fields
+

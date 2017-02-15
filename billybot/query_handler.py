@@ -10,6 +10,7 @@ class BaseQueryHandler(object):
 
         self.query_results = None
         self.PENDING = False
+        self.ERROR = None
 
     def run_query(self, incoming_msg):
         """Run query and look for single match."""
@@ -23,11 +24,10 @@ class BaseQueryHandler(object):
 
         if not valid:
             self.PENDING = False
-
-        if not found:
+            self.ERROR = 'NO_RESULTS'
+        elif not found:
             self.PENDING = True
-
-        if found:
+        else:
             self.PENDING = False
             self._extract_results()
 
@@ -78,12 +78,15 @@ class MemberQuery(BaseQueryHandler):
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
 
-        zipcode = None        
-
+        # if a zip code is in the message, identify
+        # zip code and then remove it from the message
         zip_in_msg = re.search(r'\d{5}', incoming_msg)
+        
         if zip_in_msg:
             zipcode = zip_in_msg.group()
             incoming_msg = incoming_msg.replace(zipcode, '')
+        else:
+             zipcode = None
         
         self.query_results = MemberParser.find_members(incoming_msg, zipcode)
 
@@ -99,44 +102,43 @@ class ContactQuery(MemberQuery):
     def _package_message(self, query):
         """Package message and return reply and attachments."""
 
-        if not self.PENDING:
-            primary = "Here you go :) Let me know if there is anything else I can do for you."
-            secondary = None
-            data = {'title': self.member_summary,
-                    'title_link': self.member_data['website'],
-                    'fields': [{'title': 'Twitter',
-                                'value': 'twitter.com/{}'.format(self.member_data['twitter_id']),
-                                'short': True},
-                               {'title': 'Phone',
-                                'value': self.member_data['phone'],
-                                'short': True}],
-                    'text': 'Contact info'}
+        primary_reply = None
+        secondary_reply = None
+        data = {'title': None, 'title_link': None,
+                'fields': [], 'text': None}
+
+        if self.ERROR:
+            primary_reply = self.ERROR
+            secondary_reply = 'GET_HELP'
+
+        elif not self.PENDING:
+            
+            twitter = self.member_data.get('twitter_id')
+            twitter_url = 'twitter.com/{}'.format(twitter) if twitter else None
+            
+            proposed_fields = [('Twitter', twitter_url), 
+                               ('Phone', self.member_data.get('phone')),
+                               ('Office', self.member_data.get('office')),
+                               ('Contact Form', self.member_data.get('contact_form'))]
+
+            fields = MessageHandler.create_attachment_fields(proposed_fields)
+
+            data['title'] = self.member_summary
+            data['title_link'] = self.member_data['website']
+            data['fields'] = fields
+
+            primary_reply = 'RESOLVED'
+            secondary_reply = 'NONE'
 
         else:
-            primary = "I found multiple matches for '{}'".format(query)
-            secondary = "Which one did you mean?"
-            data = {'title': "Results for '{}'".format(query),
-                    'title_link': None,
-                    'fields': [],
-                    'text': [item[0] for item in self.query_results]}
+            primary_reply = 'RESULTS'
+            secondary_reply = 'CLARIFY'
+            items = [item[0] for item in self.query_results]
+            
+            data['text'] = items
 
-
-        msg_handler = MessageHandler(primary, secondary, **data)
+        msg_handler = MessageHandler(primary_reply, secondary_reply, **data)
         reply = msg_handler.make_reply()
+
         return reply
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
