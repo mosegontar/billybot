@@ -73,9 +73,7 @@ class MemberQuery(BaseQueryHandler):
         super().__init__()
 
         self.member_summary = None
-        self.bioguide_id = None
         self.member_data = None
-        self.msg_hander = None
 
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
@@ -94,7 +92,6 @@ class MemberQuery(BaseQueryHandler):
 
         self.member_summary = self.query_results[0][0]
         self.member_data = self.query_results[0][1]
-
 
 
 class ContactQuery(MemberQuery):

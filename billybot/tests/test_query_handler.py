@@ -1,6 +1,6 @@
 import unittest
 
-from billybot.vote_query import VoteQuery
+from billybot.query_handler import VoteQuery
 
 
 class TestVoteQuery(unittest.TestCase):

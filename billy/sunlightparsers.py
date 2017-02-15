@@ -13,7 +13,7 @@ class MemberParser(object):
         if zipcode:
             initial_data = cls.find_member_by_zip(zipcode)
             
-        data = cls.lookup_members(query)
+        data = cls.lookup_members(query, initial_data)
 
         if data:
             found_members = [cls.summarize_bio(bio) for bio in data]
@@ -44,6 +44,14 @@ class MemberParser(object):
         return matches
 
     @classmethod
+    def summarize_bio(cls, bio):
+        """Receive full Legislator bio and return tuple summary."""
+
+        member_summary = cls.formalize_name(bio)
+
+        return (member_summary, bio)
+
+    @classmethod
     def formalize_name(cls, member_bio):
         _full_name = ' '.join([member_bio['first_name'],
                               member_bio['last_name']])
@@ -53,13 +61,3 @@ class MemberParser(object):
                                               member_bio['party'],
                                               member_bio['state'])
         return formal_name
-
-    @classmethod
-    def summarize_bio(cls, bio):
-        """Receive full Legislator bio and return tuple summary."""
-
-        member_summary = cls.formalize_name(bio)
-
-        return (member_summary, bio) #bio['bioguide_id'])
-
-
