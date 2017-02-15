@@ -1,7 +1,7 @@
 import time
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
-from .vote_query import ContactQuery
+from .query_handler import ContactQuery
 
 
 class MessageTriage(object):
@@ -16,21 +16,19 @@ class MessageTriage(object):
     def process_query(self):
         """Run query and return query handler, reply, and attachment."""
 
-        if self.query_handler and self.query_handler.PENDING:
-        
+        if self.query_handler:
+
             message = self.message
             query_handler = self.query_handler
-        
+
         else:
-        
             command, message = self.prepare_query()
 
             QueryHandlerInstance = self.command_queries.get(command)
             query_handler = QueryHandlerInstance()
 
-        result = query_handler.run_query(message)
-
-        return query_handler, result
+        reply = query_handler.run_query(message)
+        return query_handler, reply
 
     def prepare_query(self):
         """Identify which query handler to use based on user's command."""
@@ -53,18 +51,24 @@ class BillyBot(object):
         active_query = self.active_queries.get(user_id)
 
         triage = MessageTriage(command, active_query)
-        query_handler, reply, attachments = triage.process_query()
+        query_handler, reply = triage.process_query()
 
-        self.active_queries[user_id] = query_handler
+        if not query_handler.PENDING:
+            self.active_queries[user_id] = None
+        else:
+            self.active_queries[user_id] = query_handler
 
-        self.send_message(username, reply, attachments, channel)
+        for msg in reply:
+            text = msg['text']
+            attachments = msg['attachments']
+            self.send_message(username, text, attachments, channel)
 
-    def send_message(self, username, reply, attachments, channel):
+    def send_message(self, username, text, attachments, channel):
         """Send message back to user via slack api call."""
 
         SLACK_CLIENT.api_call("chat.postMessage",
                               channel=channel,
-                              text=reply,
+                              text=text,
                               as_user=True,
                               unfurl_media=False,
                               unfurl_links=False,

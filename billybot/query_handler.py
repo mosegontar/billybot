@@ -1,15 +1,14 @@
+import copy
 from billy.sunlightparsers import MemberParser, BillParser
-from .query_handler import BaseQueryHandler
-from .message_handler import VoteQueryMessageHandler, ErrorMessageHandler
+from .message_handler import MessageHandler
 
 
 class BaseQueryHandler(object):
 
-    def __init__(self, *args):
+    def __init__(self):
 
-        self.requested_data = args
         self.query_results = None
-        self.PENDING = 1
+        self.PENDING = False
 
     def run_query(self, incoming_msg):
         """Run query and look for single match."""
@@ -22,18 +21,17 @@ class BaseQueryHandler(object):
         valid, found = self._validate_results()
 
         if not valid:
-            self.PENDING = 0
-            # prepare error
-            pass
+            self.PENDING = False
 
         if not found:
-            # prepare msg
-            self.PENDING += 1
+            self.PENDING = True
 
         if found:
-            self.PENDING = 0
+            self.PENDING = False
             self._extract_results()
-            self._package_message()
+
+        reply = self._package_message(incoming_msg)
+        return reply
 
     def _narrow_results(self, keywords):
         """Narrow query_results down based on matching keywords."""
@@ -59,14 +57,14 @@ class BaseQueryHandler(object):
         return valid, found
 
 
-class MemberQueryHandler(BaseQueryHandler):
+class MemberQuery(BaseQueryHandler):
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self):
 
         self.member_summary = None
         self.bioguide_id = None
         self.member_data = None
+        self.msg_hander = None
 
     def _initialize_results(self, incoming_msg):
         """Initialize query results with call to Sunlight API."""
@@ -79,43 +77,48 @@ class MemberQueryHandler(BaseQueryHandler):
         self.member_summary = self.query_results[0][0]
         self.member_data = self.query_results[0][1]
 
-    def _package_message(self):
+    def _package_message(self, query):
         """Package message and return reply and attachments."""
 
-        for item in self.requested_data:
-            print(self.member_data[item])
-
-class BillQueryHandler(BaseQueryHandler):
-
-    def __init__(self, *args):
-        super().__init__(*args)
-
-        self.bill_title = None
-        self.bill_id = None
-        self.bill_data = None
-
-
-class ContactQuery(object):
-
-    def __init__(self):
-
-        self.member = MemberQueryHandler('first_name', 
-                                         'last_name', 
-                                         'website',
-                                         'phone',
-                                         'twitter_id')
-        self.PENDING = 1
-
-    def run_query(self, incoming_msg):
-        """Run member.run_query if a member query is pending."""
-        
         if self.PENDING:
-            self.member.run_query(incoming_msg)
-            self.PENDING = self.member.PENDING
+            data = {'title': "Results for '{}'".format(query),
+                    'title_link': None,
+                    'fields': [],
+                    'text': [item[0] for item in self.query_results]}
+
+            primary = "I'm finding multiple matches for '{}'".format(query)
+            secondary = "Which one would you like to view?"
+        else:
+
+
+            primary = "Here you go!"
+            secondary = None
+
+        msg_handler = MessageHandler(primary, secondary, **data)
+        reply = msg_handler.make_reply()
+
+        return reply
+
+
+class ContactQuery(MemberQuery):
+
+                data = {'title': self.member_summary,
+                    'title_link': self.member_data['website'],
+                    'fields': [{'title': 'Twitter',
+                                'value': 'twitter.com/{}'.format(self.member_data['twitter_id']),
+                                'short': True},
+                               {'title': 'Phone',
+                                'value': self.member_data['phone'],
+                                'short': True}],
+                    'text': 'Contact info'}
 
 
 
-class BillQuery(object):
+
+
+
+
+
 
 
 
