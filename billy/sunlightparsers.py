@@ -34,7 +34,10 @@ class MemberParser(object):
         if not items:
             items = cls.MEMBERS_OF_CONGRESS
 
-        key_words = shlex.split(keys)
+        try:
+            key_words = shlex.split(keys)
+        except:
+            key_words = keys.split()
 
         matches = []
 

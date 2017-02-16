@@ -39,7 +39,10 @@ class BaseQueryHandler(object):
     def _narrow_results(self, keywords):
         """Narrow query_results down based on matching keywords."""
 
-        keywords = shlex.split(keywords)
+        try:
+            keywords = shlex.split(keywords)
+        except:
+            keywords = keywords.split()
 
         # if user entered a number corresponding to the results list order
         if len(keywords) == 1:
