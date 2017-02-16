@@ -18,7 +18,6 @@ class MessageTriage(object):
 
         if self.query_handler:
 
-            message = self.message
             query_handler = self.query_handler
 
         else:
