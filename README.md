@@ -1,3 +1,3 @@
 # billybot
 
-A Slack bot for querying legislator and congressional bill information from the Sunlight Foundation API.
+A Slack bot for querying contact info for members of congress.
