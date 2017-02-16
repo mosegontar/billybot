@@ -3,7 +3,7 @@ from billy.sunlightapi import SunlightAPI
 
 class MemberParser(object):
 
-    MEMBERS_OF_CONGRESS = SunlightAPI.get_all_members_of_congress()   
+    MEMBERS_OF_CONGRESS = SunlightAPI.get_all_members_of_congress()
 
     @classmethod
     def find_members(cls, query, zipcode=None):
@@ -12,7 +12,7 @@ class MemberParser(object):
         initial_data = None
         if zipcode:
             initial_data = cls.find_member_by_zip(zipcode)
-            
+
         data = cls.lookup_members(query, initial_data)
 
         if data:
@@ -25,7 +25,7 @@ class MemberParser(object):
     @classmethod
     def find_member_by_zip(cls, zipcode):
         data = SunlightAPI.search_legislators_by_zip(zipcode)
-        return data        
+        return data
 
     @classmethod
     def lookup_members(cls, keys, items=None):
@@ -33,14 +33,14 @@ class MemberParser(object):
         if not items:
             items = cls.MEMBERS_OF_CONGRESS
 
-        key_words = keys.split()
+        key_words = [w.strip('"') for w in keys.split()]
 
         matches = []
-        
+
         for member in items:
             if all([k in member.values() for k in key_words]):
                 matches.append(member)
-        
+
         return matches
 
     @classmethod
