@@ -81,13 +81,13 @@ class MemberQuery(BaseQueryHandler):
         # if a zip code is in the message, identify
         # zip code and then remove it from the message
         zip_in_msg = re.search(r'\d{5}', incoming_msg)
-        
+
         if zip_in_msg:
             zipcode = zip_in_msg.group()
             incoming_msg = incoming_msg.replace(zipcode, '')
         else:
              zipcode = None
-        
+
         self.query_results = MemberParser.find_members(incoming_msg, zipcode)
 
     def _extract_results(self):
@@ -102,21 +102,20 @@ class ContactQuery(MemberQuery):
     def _package_message(self, query):
         """Package message and return reply and attachments."""
 
-        primary_reply = None
-        secondary_reply = None
+        primary_reply = 'NONE'
+        secondary_reply = 'NONE'
         data = {'title': None, 'title_link': None,
                 'fields': [], 'text': None}
 
         if self.ERROR:
             primary_reply = self.ERROR
-            secondary_reply = 'GET_HELP'
 
         elif not self.PENDING:
-            
+
             twitter = self.member_data.get('twitter_id')
             twitter_url = 'twitter.com/{}'.format(twitter) if twitter else None
-            
-            proposed_fields = [('Twitter', twitter_url), 
+
+            proposed_fields = [('Twitter', twitter_url),
                                ('Phone', self.member_data.get('phone')),
                                ('Office', self.member_data.get('office')),
                                ('Contact Form', self.member_data.get('contact_form'))]
@@ -134,7 +133,7 @@ class ContactQuery(MemberQuery):
             primary_reply = 'RESULTS'
             secondary_reply = 'CLARIFY'
             items = [item[0] for item in self.query_results]
-            
+
             data['text'] = items
 
         msg_handler = MessageHandler(primary_reply, secondary_reply, **data)

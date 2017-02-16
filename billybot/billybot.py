@@ -22,22 +22,10 @@ class MessageTriage(object):
             query_handler = self.query_handler
 
         else:
-            command, message = self.prepare_query()
+            query_handler = ContactQuery()
 
-            QueryHandlerInstance = self.command_queries.get(command)
-            query_handler = QueryHandlerInstance()
-
-        reply = query_handler.run_query(message)
+        reply = query_handler.run_query(self.message)
         return query_handler, reply
-
-    def prepare_query(self):
-        """Identify which query handler to use based on user's command."""
-
-        words_in_msg = self.message.split()
-        command = words_in_msg[0].strip()
-        message = ' '.join(words_in_msg[1:]).strip()
-
-        return command, message
 
 
 class BillyBot(object):
