@@ -15,5 +15,7 @@ Accepts variety of keyword queries and will present lists of partial matches and
 
 `@billybot John D` will find all Democrats named John.
 
+`@billybot John D house` will find all Democrats named John in the House.
 
-*(note that `@billybot` is not required when chatting via direct message)*
+
+* *(note that* `@billybot` *is not required when chatting via direct message)*
