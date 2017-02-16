@@ -23,7 +23,7 @@ class MessageTriage(object):
         else:
             query_handler = ContactQuery()
 
-        reply = query_handler.run_query(self.message)
+        reply = query_handler.run_query(self.message.strip(':'))
         return query_handler, reply
 
 
