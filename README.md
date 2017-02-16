@@ -18,6 +18,7 @@ Accepts variety of keyword queries and will present lists of partial matches and
 `@billybot John D house` will find all Democrats named John in the House.
 
 `@billybot Bernie`:
+
 ![results for Bernie Sanders](example.png)
 
 * *(note that* `@billybot` *is not required when chatting via direct message)*
