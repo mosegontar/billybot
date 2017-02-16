@@ -1,5 +1,7 @@
 import re
 import copy
+import shlex
+
 from billy.sunlightparsers import MemberParser
 from .message_handler import MessageHandler
 
@@ -37,7 +39,7 @@ class BaseQueryHandler(object):
     def _narrow_results(self, keywords):
         """Narrow query_results down based on matching keywords."""
 
-        keywords = keywords.split()
+        keywords = shlex.split(keywords)
 
         # if user entered a number corresponding to the results list order
         if len(keywords) == 1:

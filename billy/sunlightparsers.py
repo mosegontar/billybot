@@ -1,3 +1,4 @@
+import shlex
 from billy.sunlightapi import SunlightAPI
 
 
@@ -33,7 +34,7 @@ class MemberParser(object):
         if not items:
             items = cls.MEMBERS_OF_CONGRESS
 
-        key_words = [w.strip('"') for w in keys.split()]
+        key_words = shlex.split(keys)
 
         matches = []
 

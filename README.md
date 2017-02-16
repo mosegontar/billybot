@@ -5,13 +5,15 @@ Accepts variety of keyword queries and will present lists of partial matches and
 
 ## Examples:
 
-`@billybot Elizabeth` will ask you to select from a list of members named Elizabeth.
+`@billybot Elizabeth` will find all members of congress named Elizabeth.
 
-`@billybot 02138` will present an initial list of members based on the zipcode 02138.
+`@billybot 02138` will find all members of congress representing that zip code.
 
-`@billybot California senate` will ask you to select from the list of California's two senators.
+`@billybot California senate` will find both California senators.
 
-`@billybot W`
+`@billybot "West Virginia"` will find all representatives from West Virginia
+
+`@billybot John D` will find all Democrats named John.
 
 
 *(note that `@billybot` is not required when chatting via direct message)*
