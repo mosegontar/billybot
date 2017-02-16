@@ -12,7 +12,7 @@ Accepts variety of keyword queries and will present lists of partial matches and
 
 `@billybot California senate` will find both California senators.
 
-`@billybot "West Virginia"` will find all representatives from West Virginia
+`@billybot "West Virginia"` will find all representatives from West Virginia.
 
 `@billybot John D` will find all Democrats named John.
 
