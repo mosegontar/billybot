@@ -1,26 +1,30 @@
 import re
 import copy
 import shlex
-
+import abc
 from billy.sunlightparsers import MemberParser
 from .message_handler import MessageHandler
 
 
 class BaseQueryHandler(object):
 
+    """Abstract base class from which all query handlers derive"""
+
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self):
 
-        self.query_results = None
         self.PENDING = False
         self.ERROR = None
+        self._query_results = None
 
     def run_query(self, incoming_msg):
         """Run query and look for single match."""
 
-        if not self.query_results:
+        if not self._query_results:
             self._initialize_results(incoming_msg)
         else:
-            self.query_results = self._narrow_results(incoming_msg)
+            self._query_results = self._narrow_results(incoming_msg)
 
         valid, found = self._validate_results()
 
@@ -39,21 +43,23 @@ class BaseQueryHandler(object):
     def _narrow_results(self, keywords):
         """Narrow query_results down based on matching keywords."""
 
+        # Try splitting keywords using shlex to preserve words within qoutes
         try:
             keywords = shlex.split(keywords)
         except:
             keywords = keywords.split()
 
-        # if user entered a number corresponding to the results list order
+        # If single integer, try getting query_results at that index
         if len(keywords) == 1:
             try:
-                return [self.query_results[int(keywords[0])-1]]
+                return [self._query_results[int(keywords[0])-1]]
             except:
                 pass
 
-        # find matches based on entered keywords
+        # Find matches based on entered keywords.
+        # All key words must be in list item to qualify as match.
         matches = []
-        for match in self.query_results:
+        for match in self._query_results:
             if all([k in match[1].values() for k in keywords]):
                 matches.append(match)
 
@@ -62,15 +68,29 @@ class BaseQueryHandler(object):
     def _validate_results(self):
         """Validate whether results exist and that requested item found."""
 
-        if not self.query_results:
+        if not self._query_results:
             valid, found = False, False
-        elif len(self.query_results) == 1:
+        elif len(self._query_results) == 1:
             valid, found = True, True
         else:
             valid, found = True, False
 
         return valid, found
 
+    @abc.abstractmethod
+    def _initialize_results(self):
+        """Return initial query results from Sunlight API call"""
+        pass
+
+    @abc.abstractmethod
+    def _extract_results(self):
+        """Set instance variables with results data"""
+        pass
+
+    @abc.abstractmethod
+    def _package_message(self):
+        """Create and return message based on query results"""
+        pass
 
 class MemberQuery(BaseQueryHandler):
 
@@ -93,13 +113,13 @@ class MemberQuery(BaseQueryHandler):
         else:
              zipcode = None
 
-        self.query_results = MemberParser.find_members(incoming_msg, zipcode)
+        self._query_results = MemberParser.find_members(incoming_msg, zipcode)
 
     def _extract_results(self):
         """Set instance variables with member summary and full member data."""
 
-        self.member_summary = self.query_results[0][0]
-        self.member_data = self.query_results[0][1]
+        self.member_summary = self._query_results[0][0]
+        self.member_data = self._query_results[0][1]
 
 
 class ContactQuery(MemberQuery):
@@ -137,7 +157,7 @@ class ContactQuery(MemberQuery):
         else:
             primary_reply = 'RESULTS'
             secondary_reply = 'CLARIFY'
-            items = [item[0] for item in self.query_results]
+            items = [item[0] for item in self._query_results]
 
             data['text'] = items
 
