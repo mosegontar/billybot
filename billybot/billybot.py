@@ -10,8 +10,6 @@ class MessageTriage(object):
 
         self.message = message
         self.query_handler = query_handler
-        self.command_queries = {'vote': None,
-                                'contact': ContactQuery}
 
     def process_query(self):
         """Run query and return query handler, reply, and attachment."""
