@@ -1,7 +1,8 @@
 import time
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
-from .query_handler import ContactQuery
+from .message_handler import ContactQueryMessageHandler
+from .query_handler import MemberQuery
 
 
 class MessageTriage(object):
@@ -19,7 +20,7 @@ class MessageTriage(object):
             query_handler = self.query_handler
 
         else:
-            query_handler = ContactQuery()
+            query_handler = MemberQuery(ContactQueryMessageHandler)
 
         reply = query_handler.run_query(self.message.strip(':'))
         return query_handler, reply

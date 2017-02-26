@@ -3,14 +3,11 @@ import copy
 import shlex
 import abc
 from billy.sunlightparsers import MemberParser
-from .message_handler import MessageHandler
+from .message_handler import ContactQueryMessageHandler
 
 
-class BaseQueryHandler(object):
-
+class BaseQueryHandler(metaclass=abc.ABCMeta):
     """Abstract base class from which all query handlers derive"""
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self):
 
@@ -37,7 +34,7 @@ class BaseQueryHandler(object):
             self.PENDING = False
             self._extract_results()
 
-        reply = self._package_message(incoming_msg)
+        reply = self._reply(incoming_msg)
         return reply
 
     def _narrow_results(self, keywords):
@@ -88,20 +85,22 @@ class BaseQueryHandler(object):
         pass
 
     @abc.abstractmethod
-    def _package_message(self):
+    def _reply(self):
         """Create and return message based on query results"""
         pass
 
+
 class MemberQuery(BaseQueryHandler):
+    """Handles queries for congress member contact info"""
 
-    def __init__(self):
+    def __init__(self, msg_handler):
         super().__init__()
-
+        self.msg_handler = msg_handler
         self.member_summary = None
         self.member_data = None
 
     def _initialize_results(self, incoming_msg):
-        """Initialize query results with call to Sunlight API."""
+        """Calls Sunlight legislator API and returns data matching keywords"""
 
         # if a zip code is in the message, identify
         # zip code and then remove it from the message
@@ -111,7 +110,7 @@ class MemberQuery(BaseQueryHandler):
             zipcode = zip_in_msg.group()
             incoming_msg = incoming_msg.replace(zipcode, '')
         else:
-             zipcode = None
+            zipcode = None
 
         self._query_results = MemberParser.find_members(incoming_msg, zipcode)
 
@@ -121,48 +120,14 @@ class MemberQuery(BaseQueryHandler):
         self.member_summary = self._query_results[0][0]
         self.member_data = self._query_results[0][1]
 
+    def _reply(self, msg):
+        """Instantiate handler with query data and return reply message"""
 
-class ContactQuery(MemberQuery):
+        msg_handler = self.msg_handler(query=msg,
+                                       pending=self.PENDING,
+                                       error=self.ERROR,
+                                       summary=self.member_summary,
+                                       data=self.member_data,
+                                       results=self._query_results)
 
-    def _package_message(self, query):
-        """Package message and return reply and attachments."""
-
-        primary_reply = 'NONE'
-        secondary_reply = 'NONE'
-        data = {'title': None, 'title_link': None,
-                'fields': [], 'text': None}
-
-        if self.ERROR:
-            primary_reply = self.ERROR
-
-        elif not self.PENDING:
-
-            twitter = self.member_data.get('twitter_id')
-            twitter_url = 'twitter.com/{}'.format(twitter) if twitter else None
-
-            proposed_fields = [('Twitter', twitter_url),
-                               ('Phone', self.member_data.get('phone')),
-                               ('Office', self.member_data.get('office')),
-                               ('Contact Form', self.member_data.get('contact_form'))]
-
-            fields = MessageHandler.create_attachment_fields(proposed_fields)
-
-            data['title'] = self.member_summary
-            data['title_link'] = self.member_data['website']
-            data['fields'] = fields
-
-            primary_reply = 'RESOLVED'
-            secondary_reply = 'NONE'
-
-        else:
-            primary_reply = 'RESULTS'
-            secondary_reply = 'CLARIFY'
-            items = [item[0] for item in self._query_results]
-
-            data['text'] = items
-
-        msg_handler = MessageHandler(primary_reply, secondary_reply, **data)
-        reply = msg_handler.make_reply()
-
-        return reply
-
+        return msg_handler.get_message()
