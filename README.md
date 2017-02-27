@@ -18,6 +18,8 @@ Accepts variety of keyword queries and will present lists of partial matches and
 
 `@billybot John D house` will find all Democrats named John in the House.
 
+`@billybot John D. and Catherine T. MacArthur Foundation` will not find anything.
+
 `@billybot Bernie`:
 
 ![results for Bernie Sanders](example.png)
