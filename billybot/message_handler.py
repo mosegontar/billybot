@@ -7,7 +7,8 @@ from eng_join import join
 
 
 class SlackMessageHandler(metaclass=abc.ABCMeta):
-
+    """Abstract base class from which all Slack message handlers derive"""
+    
     message_dictionary = dict()
     message_dictionary['NONE'] = ''
     message_dictionary['RESOLVED'] = "Here's what I found {} :) Let me know"\
