@@ -1,6 +1,24 @@
 import unittest
 
+from billy.sunlightapi import SunlightAPI
 from billy.sunlightparsers import MemberParser
+
+
+class TestCustomAPICalls(unittest.TestCase):
+
+    def setUp(self):
+        self.api = SunlightAPI()
+
+    def test_get_member_recent_votes(self):
+        # Test with Elizabeth Warren
+        results = self.api.get_member_recent_votes('W000817')
+        self.assertTrue(len(results) > 0)
+
+    def test_get_roll_call_vote(self):
+        # Test with Elizabeth Warren
+        results = self.api.get_roll_call_vote('s38-2017', 'W000817')
+        self.assertTrue(len(results) == 1)
+        self.assertTrue('voters' in results[0].keys())
 
 
 class TestMemberParser(unittest.TestCase):
@@ -24,11 +42,11 @@ class TestMemberParser(unittest.TestCase):
         results = self.parser.lookup_members('senate', items)
         self.assertEqual(len(results), 2)
 
-    def test_formalize_name(self):        
+    def test_formalize_name(self):
         items = self.parser.find_member_by_zip('02052')
         results = self.parser.lookup_members('Warren', items)
         self.assertEqual(len(results), 1)
-        
+
         member = results[0]
         formalized_name = self.parser.formalize_name(member)
         self.assertEqual(formalized_name, 'Sen. Elizabeth Warren (D-MA)')
@@ -46,7 +64,3 @@ class TestMemberParser(unittest.TestCase):
         self.assertTrue(len(results) > 2)
         results = self.parser.find_members('senate D', '02052')
         self.assertEqual(len(results), 2)
-
-
-
-

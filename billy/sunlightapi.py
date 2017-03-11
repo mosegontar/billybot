@@ -45,14 +45,18 @@ class SunlightAPI(object):
     # The methods below don't use Python-Sunlight
 
     def get_roll_call_vote(self, roll_id, bioguide_id):
-        url = self.domain + 'votes?roll_id={}&fields=voters.{}.vote'.format(roll_id,
-                                                                            bioguide_id)
-        resp = requests.get(url)
+        parameters = {'roll_id': roll_id,
+                      'fields': 'voters.{}.vote'.format(bioguide_id)}
+
+        url = self.domain + 'votes'
+        resp = requests.get(url, params=parameters)
         return SunlightAPI.get_results(resp.text)
 
     def get_member_recent_votes(self, bioguide_id):
-        url = self.domain + 'votes?voter_ids.{}__exists=true&per_page=50'.format(bioguide_id)
-        resp = requests.get(url)
+        parameters = {'voter_ids.{}__exists'.format(bioguide_id): True,
+                      'per_page': 50}
+        url = self.domain + 'votes'
+        resp = requests.get(url, params=parameters)
         return SunlightAPI.get_results(resp.text)
 
 
