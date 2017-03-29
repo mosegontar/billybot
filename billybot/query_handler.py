@@ -5,6 +5,7 @@ import abc
 from billy.sunlightparsers import MemberParser
 from .message_handler import ContactQueryMessageHandler
 
+import time
 
 class BaseQueryHandler(metaclass=abc.ABCMeta):
     """Abstract base class from which all query handlers derive"""
@@ -17,7 +18,9 @@ class BaseQueryHandler(metaclass=abc.ABCMeta):
 
     def run_query(self, incoming_msg):
         """Run query and look for single match."""
-
+        print('Okay running query for', incoming_msg)
+        time.sleep(30)
+        print('Continuing query for', incoming_msg)
         if not self._query_results:
             self._initialize_results(incoming_msg)
         else:
