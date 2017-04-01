@@ -79,10 +79,7 @@ class BillyBot(object):
     def _monitor_old_threads(self):
         """Check how many active and old threads are alive."""
 
-        current_time = datetime.datetime.now().timestamp()
-
-        active_threads = [thread.time_alive(current_time)
-                          for thread in threading.enumerate()[1:]]
+        active_threads = [thread.time_alive for thread in threading.enumerate()[1:]]
 
         old_threads = [item >= MAX_THREAD_AGE for item in active_threads]
 
@@ -118,15 +115,11 @@ class MessageTriage(threading.Thread):
         self.message = command
         self.active_query = MessageTriage.ACTIVE_QUERIES.get(self.user_id)
 
-    @classmethod
-    def update_queries(cls, user_id=None, handler=None):
-        """Update active_queries dict with latest handler."""
-
-        cls.ACTIVE_QUERIES[user_id] = handler
-
-    def time_alive(self, current_time):
+    @property
+    def time_alive(self):
         """Return number of seconds the thread instance has been alive."""
 
+        current_time = datetime.datetime.now().timestamp()
         return current_time - self._thread_initiated
 
     def run(self):
@@ -135,9 +128,9 @@ class MessageTriage(threading.Thread):
         query_handler, reply = self.process_query()
 
         if not query_handler.PENDING:
-            self.update_queries(self.user_id, None)
+            MessageTriage.ACTIVE_QUERIES[self.user_id] = None
         else:
-            self.update_queries(self.user_id, query_handler)
+            MessageTriage.ACTIVE_QUERIES[self.user_id] = query_handler
 
         for msg in reply:
             text = msg['text']
