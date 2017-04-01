@@ -1,9 +1,12 @@
 import time
+import random
+from threading import Thread
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
 from .message_handler import ContactQueryMessageHandler
 from .query_handler import MemberQuery
 
+active_queries = dict()
 
 class MessageTriage(object):
 
@@ -16,9 +19,7 @@ class MessageTriage(object):
         """Run query and return query handler, reply, and attachment."""
 
         if self.query_handler:
-
             query_handler = self.query_handler
-
         else:
             query_handler = MemberQuery(ContactQueryMessageHandler)
 
@@ -26,28 +27,33 @@ class MessageTriage(object):
         return query_handler, reply
 
 
-class BillyBot(object):
+class MessageOperator(Thread):
 
-    def __init__(self):
-        self.active_queries = dict()
+    def __init__(self, u_id, u_name, cmnd, chnl):
+        Thread.__init__(self)
+        self.user_id = u_id
+        self.username = u_name
+        self.channel = chnl
+        self.command = cmnd
 
-    def handle_command(self, user_id, username, command, channel):
+    def run(self):
         """Triage message and prepare reply to send."""
+        if self.command == 'Warren':
+            time.sleep(20)
+        active_query = active_queries.get(self.user_id)
 
-        active_query = self.active_queries.get(user_id)
-
-        triage = MessageTriage(command, active_query)
+        triage = MessageTriage(self.command, active_query)
         query_handler, reply = triage.process_query()
 
         if not query_handler.PENDING:
-            self.active_queries[user_id] = None
+            active_queries[self.user_id] = None
         else:
-            self.active_queries[user_id] = query_handler
+            active_queries[self.user_id] = query_handler
 
         for msg in reply:
             text = msg['text']
             attachments = msg['attachments']
-            self.send_message(username, text, attachments, channel)
+            self.send_message(self.username, text, attachments, self.channel)
 
     def send_message(self, username, text, attachments, channel):
         """Send message back to user via slack api call."""
@@ -59,6 +65,9 @@ class BillyBot(object):
                               unfurl_media=False,
                               unfurl_links=False,
                               attachments=attachments)
+
+
+class BillyBot(object):
 
     def parse_slack_output(self, stream_output):
         """
@@ -106,9 +115,13 @@ class BillyBot(object):
         if SLACK_CLIENT.rtm_connect():
             print('BillyBot is running!')
             while True:
-                user_id, username, command, channel = self.parse_slack_output(SLACK_CLIENT.rtm_read())
-                if command and channel:
-                    self.handle_command(user_id, username, command, channel)
+                incoming_data = SLACK_CLIENT.rtm_read()
+                u_id, u_name, cmnd, chnl = self.parse_slack_output(incoming_data)
+                if cmnd and chnl:
+                    print('Okay will deal with', cmnd)
+                    thread = MessageOperator(u_id, u_name, cmnd, chnl)
+                    thread.start()
+
                 time.sleep(READ_WEBSOCKET_DELAY)
         else:
             print('Connection failed :(')
