@@ -1,13 +1,16 @@
 import time
 import datetime
 import unittest
-from unittest.mock import patch, call
+import threading
+from unittest.mock import patch
 
 from billybot.billybot import MessageTriage
 
 
 class TestMessageTriage(unittest.TestCase):
 
+    def custom_mock_run(self):
+        time.sleep(5)
 
     def setUp(self):
         self.thread1 = MessageTriage('USERID1', 'user1', 'Warren', 'testchanl')
@@ -29,7 +32,20 @@ class TestMessageTriage(unittest.TestCase):
 
     @patch('billybot.billybot.MessageTriage.run')
     def test_run(self, mock_run):
-        mock_run.time_delay = lambda delay: time.sleep(delay)
-        mock_run.time_delay(5)
+        self.assertFalse(mock_run.called)
+
         self.thread1.start()
-        self.assertTrue(1 == 2)
+
+        self.assertTrue(mock_run.called)
+        self.assertEqual(threading.active_count(), 1)
+
+    @patch('billybot.billybot.MessageTriage.run', return_value='FUCK YEAH')
+    def test_run_multiple_threads(self, mock_run):
+
+        self.assertEqual(threading.active_count(), 1)
+        self.thread1.run = self.custom_mock_run
+        self.thread1.start()
+        self.thread2.run = self.custom_mock_run
+        self.thread2.start()
+        thread_count = threading.active_count()  # not fancy sheets
+        self.assertEqual(thread_count, 3)
