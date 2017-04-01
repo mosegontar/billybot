@@ -12,17 +12,20 @@ AT_BOT = '<@{}>'.format(BOT_ID)
 SLACK_CLIENT = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 READ_WEBSOCKET_DELAY = 1
 
+# What counts an an 'old' thread
+MAX_THREAD_AGE = 90  # seconds
+OLD_THREAD_LIMIT = 10
 
 slack_attachment = {
-    "fallback": None, # "Required plain-text summary of the attachment."
-    "color": '#56A0D3', # color hex value
-    "pretext": None, #"Optional text that appears above the attachment block"
-    "author_name": None ,
+    "fallback": None,  # "Required plain-text summary of the attachment."
+    "color": '#56A0D3',  # color hex value
+    "pretext": None,  # "Optional text that appears above the attachment block"
+    "author_name": None,
     "author_link": None,
     "title": None,
     "title_link": None,
     "fields": [],
-    "text": None, #"Optional text that appears within the attachment",
+    "text": None,  # "Optional text that appears within the attachment",
     "footer": None,
     "ts": None
 }
