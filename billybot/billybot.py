@@ -1,75 +1,37 @@
 import time
 import random
-from threading import Thread
+import threading
 
 from .config import BOT_ID, AT_BOT, READ_WEBSOCKET_DELAY, SLACK_CLIENT
 from .message_handler import ContactQueryMessageHandler
 from .query_handler import MemberQuery
 
-active_queries = dict()
-
-class MessageTriage(object):
-
-    def __init__(self, message, query_handler=None):
-
-        self.message = message
-        self.query_handler = query_handler
-
-    def process_query(self):
-        """Run query and return query handler, reply, and attachment."""
-
-        if self.query_handler:
-            query_handler = self.query_handler
-        else:
-            query_handler = MemberQuery(ContactQueryMessageHandler)
-
-        reply = query_handler.run_query(self.message.strip(':'))
-        return query_handler, reply
-
-
-class MessageOperator(Thread):
-
-    def __init__(self, u_id, u_name, cmnd, chnl):
-        Thread.__init__(self)
-        self.user_id = u_id
-        self.username = u_name
-        self.channel = chnl
-        self.command = cmnd
-
-    def run(self):
-        """Triage message and prepare reply to send."""
-        if self.command == 'Warren':
-            time.sleep(20)
-        active_query = active_queries.get(self.user_id)
-
-        triage = MessageTriage(self.command, active_query)
-        query_handler, reply = triage.process_query()
-
-        if not query_handler.PENDING:
-            active_queries[self.user_id] = None
-        else:
-            active_queries[self.user_id] = query_handler
-
-        for msg in reply:
-            text = msg['text']
-            attachments = msg['attachments']
-            self.send_message(self.username, text, attachments, self.channel)
-
-    def send_message(self, username, text, attachments, channel):
-        """Send message back to user via slack api call."""
-
-        SLACK_CLIENT.api_call("chat.postMessage",
-                              channel=channel,
-                              text=text,
-                              as_user=True,
-                              unfurl_media=False,
-                              unfurl_links=False,
-                              attachments=attachments)
-
 
 class BillyBot(object):
 
-    def parse_slack_output(self, stream_output):
+    def connect(self):
+        """Connect to Slack RTM and start accepting incoming messages."""
+
+        MessageOperator.ACTIVE_QUERIES = dict()
+
+        if SLACK_CLIENT.rtm_connect():
+            print('BillyBot is running!')
+
+            while True:
+
+                stream = SLACK_CLIENT.rtm_read()
+                user_id, username, command, channel = self.parse_stream(stream)
+
+                if command and channel:
+                    thread = MessageOperator(user_id, username, command, channel)
+                    thread.daemon = True
+                    thread.start()
+
+                time.sleep(READ_WEBSOCKET_DELAY)
+        else:
+            print('Connection failed :(')
+
+    def parse_stream(self, stream_output):
         """
             The Slack Real Time Messaging API is an events firehose.
             this parsing function returns None unless a message is
@@ -109,24 +71,65 @@ class BillyBot(object):
 
         return None, None, None, None
 
+
+class MessageOperator(threading.Thread):
+
+    ACTIVE_QUERIES = dict()
+
+    def __init__(self, user_id, username, command, channel):
+        threading.Thread.__init__(self)
+        self.user_id = user_id
+        self.username = username
+        self.channel = channel
+        self.message = command
+        self.active_query = MessageOperator.ACTIVE_QUERIES.get(self.user_id)
+
+    @classmethod
+    def update_queries(cls, user_id=None, handler=None):
+
+        cls.ACTIVE_QUERIES[user_id] = handler
+
     def run(self):
-        """Connect to Slack RTM and start accepting incoming messages."""
+        """Triage message and prepare reply to send."""
 
-        if SLACK_CLIENT.rtm_connect():
-            print('BillyBot is running!')
-            while True:
-                incoming_data = SLACK_CLIENT.rtm_read()
-                u_id, u_name, cmnd, chnl = self.parse_slack_output(incoming_data)
-                if cmnd and chnl:
-                    print('Okay will deal with', cmnd)
-                    thread = MessageOperator(u_id, u_name, cmnd, chnl)
-                    thread.start()
+        if self.message == 'Warren':
+            time.sleep(30)
 
-                time.sleep(READ_WEBSOCKET_DELAY)
+        query_handler, reply = self.process_query()
+
+        if not query_handler.PENDING:
+            self.update_queries(self.user_id, None)
         else:
-            print('Connection failed :(')
+            self.update_queries(self.user_id, query_handler)
+
+        for msg in reply:
+            text = msg['text']
+            attachments = msg['attachments']
+            self.send_message(self.username, text, attachments, self.channel)
+
+    def process_query(self):
+        """Run query and return query handler, reply, and attachment."""
+
+        if self.active_query:
+            query_handler = self.active_query
+        else:
+            query_handler = MemberQuery(ContactQueryMessageHandler)
+
+        reply = query_handler.run_query(self.message.strip(':'))
+        return query_handler, reply
+
+    def send_message(self, username, text, attachments, channel):
+        """Send message back to user via slack api call."""
+
+        SLACK_CLIENT.api_call("chat.postMessage",
+                              channel=channel,
+                              text=text,
+                              as_user=True,
+                              unfurl_media=False,
+                              unfurl_links=False,
+                              attachments=attachments)
 
 
 if __name__ == '__main__':
     billy = BillyBot()
-    billy.run()
+    billy.connect()
