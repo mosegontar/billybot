@@ -29,5 +29,7 @@ class TestMessageTriage(unittest.TestCase):
 
     @patch('billybot.billybot.MessageTriage.run')
     def test_run(self, mock_run):
-        print(self.thread1.start())
+        mock_run.time_delay = lambda delay: time.sleep(delay)
+        mock_run.time_delay(5)
+        self.thread1.start()
         self.assertTrue(1 == 2)
