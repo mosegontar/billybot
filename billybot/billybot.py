@@ -19,7 +19,9 @@ class BillyBot(object):
 
             while True:
 
-                self._monitor_old_threads()
+                too_many = self._monitor_old_threads()
+                if too_many:
+                    return
 
                 stream = SLACK_CLIENT.rtm_read()
                 user_id, username, command, channel = self.parse_stream(stream)
@@ -30,6 +32,7 @@ class BillyBot(object):
                     thread.start()
 
                 time.sleep(READ_WEBSOCKET_DELAY)
+
         else:
             print('Connection failed :(')
 
@@ -87,7 +90,6 @@ class BillyBot(object):
         # 'run' methods are taking a long time to return (if they are to
         # return at all). This is an indication that there is some problem
         # in our code and we exit.
-
         if len(old_threads) > OLD_THREAD_LIMIT:
 
             # print data on old threads to aid debugging
@@ -96,23 +98,30 @@ class BillyBot(object):
                 print('{}: {} via {}'.format(thread.username,
                                              thread.message,
                                              thread.active_query))
-            sys.exit()
+            return True
+
+        return False
 
 
 class MessageTriage(threading.Thread):
+    """MessageTriage instances run in their own thread and process queries."""
 
+    # We maintain a class variable dictionary with user_id as key and the
+    # current query_handler object as the value. This allows us to access
+    # the state of a query that required additional user input to resolve.
     ACTIVE_QUERIES = dict()
 
     def __init__(self, user_id, username, command, channel):
 
         threading.Thread.__init__(self)
         self._thread_initiated = datetime.datetime.now().timestamp()
+        self.name = user_id  # name of the current thread
 
-        self.name = user_id
         self.user_id = user_id
         self.username = username
         self.channel = channel
         self.message = command
+
         self.active_query = MessageTriage.ACTIVE_QUERIES.get(self.user_id)
 
     @property
@@ -123,7 +132,10 @@ class MessageTriage(threading.Thread):
         return current_time - self._thread_initiated
 
     def run(self):
-        """Triage message and prepare reply to send."""
+        """Triage message and prepare reply to send.
+
+        This method overrides the default Thread.run() implementation.
+        """
 
         query_handler, reply = self.process_query()
 
@@ -146,6 +158,7 @@ class MessageTriage(threading.Thread):
             query_handler = MemberQuery(ContactQueryMessageHandler)
 
         reply = query_handler.run_query(self.message.strip(':'))
+
         return query_handler, reply
 
     def send_message(self, username, text, attachments, channel):
