@@ -2,14 +2,14 @@ import unittest
 
 from billy.sunlightparsers import MemberParser
 from billybot.message_handler import ContactQueryMessageHandler
-from billybot.query_handler import BaseQueryHandler, MemberQuery
+from billybot.query_handler import MemberQuery
 
 
-class TestBaseQueryHandler(unittest.TestCase):
+class TestMemberQuery(unittest.TestCase):
 
     def test_narrow_results_by_keyword(self):
         data = MemberParser.find_members('D', '02052')
-        query = BaseQueryHandler()
+        query = MemberQuery(ContactQueryMessageHandler)
         query._query_results = data
         matches = query._narrow_results('Elizabeth')
         self.assertEqual(len(matches), 1)
@@ -17,21 +17,20 @@ class TestBaseQueryHandler(unittest.TestCase):
 
     def test_validate_results(self):
         data = MemberParser.find_members('D', '02052')
-        query = BaseQueryHandler()
+        query = MemberQuery(ContactQueryMessageHandler)
         query._query_results = data
 
         valid, found = query._validate_results()
         self.assertTrue(valid)
         self.assertFalse(found)
 
-class TestMemberQuery(unittest.TestCase):
-
     def test_initialize_results_without_zipcode(self):
 
         query = MemberQuery(ContactQueryMessageHandler)
         query._initialize_results('Elizabeth')
         self.assertTrue(len(query._query_results) > 1)
-        self.assertTrue(all(['Elizabeth' in member[0] for member in query._query_results]))
+        self.assertTrue(all(['Elizabeth' in member[0]
+                        for member in query._query_results]))
 
     def test_initialize_results_with_zipcode(self):
 
