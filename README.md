@@ -1,6 +1,6 @@
 # billybot
 
-A Slack bot for querying contact info for members of congress. 
+A multithreaded Slack bot for querying contact info for members of congress. 
 Accepts variety of keyword queries and will present lists of partial matches and request additional information.
 
 ## Examples:
