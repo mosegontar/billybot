@@ -1,5 +1,4 @@
-# billybot
-
+# billybot [No Longer Maintained]
 A multithreaded Slack bot for querying contact info for members of congress. 
 Accepts variety of keyword queries and will present lists of partial matches and request additional information.
 
